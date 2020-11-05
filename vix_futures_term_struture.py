@@ -1,4 +1,4 @@
-quandl_api_key="5cDGQqduzQgmM_2zfkd1"
+
 
 import pandas as pd
 import pandas_market_calendars as mcal
@@ -85,15 +85,15 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
     """
 
 
-    def add_columns(df,tenor):
+    def add_columns(df, maturity):
         """Add the Tenor, Settlement Date, Trade Days to Settlement, and Days to Settlement to the dataframe"""
-        df["Tenor"] =  tenor
+        df["Contract Month"] =  maturity
         df["Settlement Date"]=np.nan
         settlement_date = df['Settlement Date']
         #these seems a little brute force, but it is fast enough.
         for ix in  df.index:
             year,month,day = (ix.year,ix.month,ix.day)
-            sd = vix_futures_settlement_date_from_trade_date(year, month, day, tenor)
+            sd = vix_futures_settlement_date_from_trade_date(year, month, day, maturity)
             df.loc[ix,"Settlement Date"] = sd
             exchange_open_days = _valid_cfe_days.loc[ix:sd]
             trade_days_to_settlement = len(exchange_open_days)
@@ -119,7 +119,7 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
     print(f"Vix all months {vix_all_months}")
     print(f"\nVix All Months Close Columns {vix_all_months.columns}\n ")
     cols = vix_all_months.columns
-    stacked = vix_all_months.reset_index().pivot(columns="Tenor",index="Trade Date")
+    stacked = vix_all_months.reset_index().pivot(columns="Contract Month",index="Trade Date")
 
     return stacked
 
@@ -128,12 +128,3 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
 
 
 
-if __name__ == "__main__":
-    #not normal to import here
-    print("Warning:  matplotlib.pyplot and scipy.stats are required to run __main__")
-    import matplotlib.pyplot as plt
-    import scipy.stats as bc
-
-    futures_term_structure = vix_futures_term_structure(quandl_api_key,3)
-    plt.plot(futures_term_structure['Close'])
-    plt.show()
