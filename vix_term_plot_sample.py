@@ -59,14 +59,19 @@ if True:
 
     logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
     v.vix_1m_term_structure(futures_term_structure)
-    if False:
+    if True:
         try:
             import matplotlib.pyplot as plt
             import scipy.stats as bc
 
+            plt.legend()
+#            plt.plot(futures_term_structure['Close'])
+            plt.plot(futures_term_structure['VIX1M_SPVIXSTR'])
 
-            plt.plot(futures_term_structure['Close'])
-            plt.plot(cash_vix['Close'])
+
+#            plt.plot(cash_vix['Close'])
+            plt.show()
+            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
             plt.show()
         except Exception as e:
              logger.warn(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
