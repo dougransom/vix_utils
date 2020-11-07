@@ -113,7 +113,6 @@ def vix_1m_term_structure(vix_term_structure):
         vix_term_structure.loc[selected,srfm]=start_roll
         roll_period_trade_days = cfe_exchange_open_days(start_roll,ix)
         vix_term_structure.loc[selected,rptd]=roll_period_trade_days
-#        df['Days to Settlement'] = ((df['Settlement Date'] - df.index).dt.days).astype(np.int16)
 
     vix_term_structure[srfm]=pd.to_datetime(vix_term_structure[srfm])
     print(f"\nsd\n{vix_term_structure[sd]}\nsrfm\n{vix_term_structure[srfm]}")
@@ -154,7 +153,6 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
     """Download the futures data from quandl for the month 1,...number_of_futures_maturities.
     Add columns for the settlement date, number of days until settlement, and number of trade days to settlement.
     """
-
 
     def add_columns(df, maturity):
         """Add the Tenor, Settlement Date, Trade Days to Settlement, and Days to Settlement to the dataframe"""
