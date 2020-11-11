@@ -70,8 +70,8 @@ if True:
 
 
 
-#            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
-#            plt.show()
+            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
+            plt.show()
 #            print(f"cash vix\n{cash_vix}")
             a=ft2[['VIX1M_SPVIXSTR']]
             b=cash_vix['Close'][['RVOL', 'VIX']]

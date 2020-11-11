@@ -174,12 +174,18 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
             df[s] = np.nan
 
         settlement_date = df['Settlement Date']
-        # these seems a little brute force, but it is fast enough.
-        for ix in df.index.date:
+
+        def add_settle_date_and_trade_days_to_settlement(row):
+            ix=row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
             sd = vix_futures_settlement_date_from_trade_date(year, month, day, maturity)
-            df.loc[ix, "Settlement Date"] = sd
-            df.loc[ix, "Trade Days to Settlement"] = cfe_exchange_open_days(ix, sd)
+            tds = cfe_exchange_open_days(ix, sd)
+            return (sd,tds)
+        df['tds']=df.index.to_series()  #need the index as values in the applied function
+        new_cols=df.apply(add_settle_date_and_trade_days_to_settlement,axis=1,result_type='expand')
+        df["Settlement Date"]=new_cols[0]
+        df["Trade Days to Settlement"]=new_cols[1]
+        df.drop('tds',axis=1)
         for s in settle_columns:
             df[s] = pd.to_datetime(df[s])
         df['Days to Settlement'] = ((df['Settlement Date'] - df.index).dt.days).astype(np.int16)
