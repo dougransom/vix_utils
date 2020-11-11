@@ -4,7 +4,7 @@ import pandas as pd
 import logging as logging
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
-load_from_cache=True
+load_from_cache=False
 
 
 #pd.set_option('display.max_rows', )
@@ -45,9 +45,11 @@ if True:
 
 
 
+    logging.info(f"Trade and Settlement Dates")
+    wide_vix_calendar=v.vix_futures_trade_dates_and_settlement_dates()
 
     if not load_from_cache:
-        futures_term_structure = v.vix_futures_term_structure(quandl_api_key,3)
+        futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,3)
         cash_vix = cash.get_vix_index_histories("file:VIX1Y_Data.csv")
         futures_term_structure.to_pickle("futures_term_structure.pkl")
         cash_vix.to_pickle("cash_term_structure.pkl")
@@ -57,22 +59,32 @@ if True:
         cash_vix = pd.read_pickle("cash_term_structure.pkl")
         logging.info("Loaded term structure from cache")
 
+
     logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
-    v.vix_1m_term_structure(futures_term_structure)
+
+    ft2=v.vix_1m_term_structure(futures_term_structure)
     if True:
         try:
             import matplotlib.pyplot as plt
             import scipy.stats as bc
 
-            plt.legend()
-#            plt.plot(futures_term_structure['Close'])
-            plt.plot(futures_term_structure['VIX1M_SPVIXSTR'])
 
 
-#            plt.plot(cash_vix['Close'])
+#            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
+#            plt.show()
+#            print(f"cash vix\n{cash_vix}")
+            a=ft2[['VIX1M_SPVIXSTR']]
+            b=cash_vix['Close'][['RVOL', 'VIX']]
+            b['VIX1M_SPVIXSTR']=a['VIX1M_SPVIXSTR']
+
+            b.sort_index()
+            c=b['RVOL']-b['VIX1M_SPVIXSTR']
+#            plt.show()
+            print(f"A\n{a} \nB\n{b}___\n")
+
+            c.plot()
             plt.show()
-            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
-            plt.show()
+
         except Exception as e:
              logger.warn(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
                         are required to run the plots in this example. Install them into your environment if you want to

@@ -18,11 +18,15 @@ import logging as logging
 
 _cfe_calendar =  mcal.get_calendar('CFE')
 _now = dt.datetime.now()
-_five_years_away = dt.datetime(_now.year + 6, 1, 1)
+
+_future_date = dt.datetime(_now.year + 2, 1, 1)
 #generate a range that is beyond any possible settlment dates for vix futures in the data
-_valid_cfe_days = _cfe_calendar.valid_days(start_date='2000-12-20', end_date=_five_years_away).to_series();
 
+_first_vix_futures_date_date="2005-06-20"
 
+_valid_cfe_days = pd.DatetimeIndex(_cfe_calendar.valid_days(_first_vix_futures_date_date, end_date=_future_date).date).to_series()
+#days = _valid_cfe_days.date
+#days1 = pd.DatetimeIndex(days).to_series()
 
 
 @func.lru_cache(maxsize=None)       #called repeatedly with the same values, so cache the results.
@@ -75,6 +79,7 @@ def vix_futures_settlement_date_from_trade_date(year,month,day,tenor):
     year_of_settlement = year + (1 if month_of_settlement < month else 0)   #if the month_of_settlment is less than the current month, then the  settlment is next year
     return vix_futures_settlement_date_monthly(year_of_settlement,month_of_settlement)
 
+
 def vix_1m_term_structure(vix_term_structure):
     """
     dt=number of business days in the current roll period
@@ -115,7 +120,7 @@ def vix_1m_term_structure(vix_term_structure):
         vix_term_structure.loc[selected,rptd]=roll_period_trade_days
 
     vix_term_structure[srfm]=pd.to_datetime(vix_term_structure[srfm])
-    print(f"\nsd\n{vix_term_structure[sd]}\nsrfm\n{vix_term_structure[srfm]}")
+    #print(f"\nsd\n{vix_term_structure[sd]}\nsrfm\n{vix_term_structure[srfm]}")
     vix_term_structure[rpcd]=vix_term_structure[sd][1]-vix_term_structure[srfm]
     cdts="Days to Settlement"
     tdts="Trade Days to Settlement"
@@ -124,7 +129,7 @@ def vix_1m_term_structure(vix_term_structure):
     v1="VIX1M_SPVIXSTR"
     vix_term_structure[spxvstr_w]=vix_term_structure[tdts][1]/vix_term_structure[rptd]
     weight_second_month = -1*vix_term_structure[spxvstr_w]+1
-    print(f"Weight second month \n{weight_second_month}")
+#    print(f"Weight second month \n{weight_second_month}")
     front_contribution=vix_term_structure["Close"][1]*vix_term_structure[spxvstr_w]
     second_contribution=weight_second_month*vix_term_structure["Close"][2]
 
@@ -132,7 +137,7 @@ def vix_1m_term_structure(vix_term_structure):
     vix_term_structure[v1]=front_contribution+second_contribution
     vtemp=vix_term_structure[["Close",sd,srfm,tdts,cdts,rptd,rpcd,spxvstr_w,v1]][-50:]
 
-    print(f"\n Term Structure with foo  {vtemp}")
+#    print(f"\n Term Structure with foo  {vtemp}")
 
     return vix_term_structure
 
@@ -144,17 +149,95 @@ def pivot_on_contract_maturity(df):
     return df.reset_index().pivot(columns="Contract Month", index="Trade Date")
 
 def cfe_exchange_open_days(start_date,end_date):
+
     exchange_open_days = _valid_cfe_days.loc[start_date:end_date]
     return  len(exchange_open_days)
 
+@u.timeit()
+def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9):
+    """
+
+    :param number_of_futures_maturities:
+        :return:  a data frame with an index of trade date and maturity (in months) and a value of the Settlement Date
+        """
+    #by trial and error, this gives us the day
+    trade_dates=_valid_cfe_days
+    @u.timeit()
+    def add_columns_d(maturity):
+        ii=pd.Index(trade_dates,name="Trade Date")
+        df=pd.DataFrame(index=ii)
+        """Add the Conract Month (in months), Settlement Date, Trade Days to Settlement, and Days to Settlement to the dataframe"""
+        df["Contract Month"] = maturity
+        settle_columns = ['Settlement Date']
+
+        for s in settle_columns:
+            df[s] = np.nan
+
+        settlement_date = df['Settlement Date']
+        # these seems a little brute force, but it is fast enough.
+        for ix in df.index.date:
+            year, month, day = (ix.year, ix.month, ix.day)
+            sd = vix_futures_settlement_date_from_trade_date(year, month, day, maturity)
+            df.loc[ix, "Settlement Date"] = sd
+            df.loc[ix, "Trade Days to Settlement"] = cfe_exchange_open_days(ix, sd)
+        for s in settle_columns:
+            df[s] = pd.to_datetime(df[s])
+        df['Days to Settlement'] = ((df['Settlement Date'] - df.index).dt.days).astype(np.int16)
+        return df
+
+    months = tuple(range(1, 1 + number_of_futures_maturities))
+    # add in the settlment date and contract month columns
+    settle_date_frames = (add_columns_d(m) for m in months)
+    vix_all_months = u.timeit()(pd.concat)(settle_date_frames)
+
+    # pivot the data so that it can be indexed by TradeDate and Contract Month
+    cols = vix_all_months.columns
+    unstacked = pivot_on_contract_maturity(vix_all_months)
+    return unstacked
+
+@u.timeit()
+def vix_futures_term_structure(quandl_api_key,wide_settlement_calendar,number_of_futures_maturities=3):
+    """Download the futures data from quandl for the month 1,...number_of_futures_maturities.
+    Joint to the wide settlement calendar from vix_futures_trade_dates_and_settlement_dates
+    """
+    @u.timeit()
+    def add_columns_v(df, maturity):
+        """Add the Tenor, Settlement Date, Trade Days to Settlement, and Days to Settlement to the dataframe"""
+        df["Contract Month"] =  maturity
+
+        return df
+
+    months = tuple(range(1, 1 + number_of_futures_maturities))
+    ql.ApiConfig.api_key=quandl_api_key
+    #the quandle query strings
+    qc = list((f"CHRIS/CBOE_VX{i}" for i in months))
+    #the data frame for each future month (1m, 2m etc.) from quandl
+    method=u.timeit()(ql.get)
 
 
-def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
+    zmvix =zip(months,(method(a) for a in qc))
+    #add in the Maturity month columnss
+    zmvix1= list(  add_columns_v(df,m)           for m,df in zmvix)
+    #bring them all together into a dataframe
+    vix_all_months=  u.timeit()(pd.concat)(zmvix1)
+
+    #pivot the data so that it can be indexed by TradeDate and ContractMonth
+    cols = vix_all_months.columns
+    unstacked = pivot_on_contract_maturity(vix_all_months)
+
+    #inner join it to the settlement calendar
+    unstacked_with_cal=pd.merge(unstacked,wide_settlement_calendar, right_index=True,left_index=True)
+    print(f"\nunstacked with cal {unstacked_with_cal}")
+    return unstacked_with_cal
+
+
+@u.timeit()
+def vix_futures_term_structure_orig(quandl_api_key,number_of_futures_maturities=3):
     """Download the futures data from quandl for the month 1,...number_of_futures_maturities.
     Add columns for the settlement date, number of days until settlement, and number of trade days to settlement.
     """
-
-    def add_columns(df, maturity):
+    @u.timeit()
+    def add_columns_v(df, maturity):
         """Add the Tenor, Settlement Date, Trade Days to Settlement, and Days to Settlement to the dataframe"""
         df["Contract Month"] =  maturity
 #        settle_columns = ['Settlement Date','Previous Settlement Date']
@@ -185,7 +268,7 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
 
     zmvix =zip(months,(method(a) for a in qc))
     #add in the settlment date and tenor columnss
-    zmvix1= list(  add_columns(df,m)           for m,df in zmvix)
+    zmvix1= list(  add_columns_v(df,m)           for m,df in zmvix)
     #bring them all together into a dataframe
     vix_all_months=  u.timeit()(pd.concat)(zmvix1)
 
@@ -197,7 +280,5 @@ def vix_futures_term_structure(quandl_api_key,number_of_futures_maturities=3):
 
 
     return unstacked
-
-
 
 
