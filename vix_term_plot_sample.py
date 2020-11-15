@@ -60,17 +60,21 @@ if True:
         logging.info("Loaded term structure from cache")
 
 
-    logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
+#    logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
 
-    ft2=v.vix_1m_term_structure(futures_term_structure)
+#    ft2=v.vix_constant_maturity(futures_term_structure)
+
+    logging.info(f"Vix Futures Weights for continuous maturities")
+    ft3=v.vix_constant_maturity_weights(wide_vix_calendar)
     if True:
         try:
             import matplotlib.pyplot as plt
             import scipy.stats as bc
 
 
+            futures_term_structure[['Close']].plot()
 
-            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
+#            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
             plt.show()
 #            print(f"cash vix\n{cash_vix}")
             a=ft2[['VIX1M_SPVIXSTR']]
