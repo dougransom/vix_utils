@@ -1,6 +1,11 @@
 import  pandas as pd
 import utils.futures_utils as u
 import logging as logging
+from urllib.parse import urlparse
+import aiofiles
+import aiohttp
+import asyncio
+import io
 
 # https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vixcurrent.csv
 _vix_index_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vixcurrent.csv"
@@ -19,11 +24,14 @@ _gvz_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/gvz
 
 #in theory but the web server won't provide the data to the python code.  More sophisticated
 #scraping required.  so not used.
-_vix1y_history = "https://www.cboe.com/chart/GetDownloadData/?RequestSymbol=VIX1Y"
+#_vix1y_history = "https://www.cboe.com/chart/GetDownloadData/?RequestSymbol=VIX1Y"
 
 
 def symbol_to_url(sym):
-    ''' Works for some of the CBOE indexes'''
+    ''' Works for some of the CBOE indexes.
+    You can find a variety of indexes using the CBOE global index search.
+    https://ww2.cboe.com/index.
+    '''
     return f"https://ww2.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
 
 stu=symbol_to_url           #safe some typing
@@ -33,7 +41,7 @@ cboe_indexes= "https://www.cboe.com/index/indexes"
 vix1y_dashboard="https://www.cboe.com/index/dashboard/vix1y"
 
 
-def get_vix_index_histories(vix1y_url):
+async def get_vix_index_histories():
 
     def fix_vvix_columns(df):
         df = df.rename(columns={"VVIX": "Close", "Date": "Trade Date"})
@@ -75,16 +83,16 @@ def get_vix_index_histories(vix1y_url):
     simple_data_lines_to_discard=[1]*len(simple_data_urls)
     simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
 
-    index_history_urls = [_vix_index_history, _vvx_history, _vix9d_history, _vix3m_history, _vix6m_history,vix1y_url,_gvz_history]+\
+    index_history_urls = [_vix_index_history, _vvx_history, _vix9d_history, _vix3m_history, _vix6m_history,_gvz_history]+\
     simple_data_urls
-    index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M","VIX1Y","GVZ"]+simple_data_symbols
+    index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M","GVZ"]+simple_data_symbols
 
-    num_lines_to_discard = [1, 1, 3, 2, 2,2,1]+simple_data_lines_to_discard
+    num_lines_to_discard = [1, 1, 3, 2, 2,1]+simple_data_lines_to_discard
 
 
     # the function to fixup the columns is passed in to the function that builds the data frame
     fixups = [fix_vix_columns, fix_vvix_columns, fix_vix9d_columns, fix_vix3m_columns,
-              fix_vix_6m_columns,fix_vix1y_columns,fix_one_value_column_result]+simple_data_fixups
+              fix_vix_6m_columns,fix_one_value_column_result]+simple_data_fixups
 
     z = list(zip(index_history_urls, index_history_symbols, num_lines_to_discard, fixups))
 
@@ -93,16 +101,32 @@ def get_vix_index_histories(vix1y_url):
         frame["Trade Date"]=pd.to_datetime(frame["Trade Date"])
         frame.set_index("Trade Date")
         return frame
-    @u.timeit()
-    def read_csv_from_web(url,lines_to_discard):
-        logging.debug(f"\nReading URL {url} lines_to_discard {lines_to_discard}")
-        frame= u.timeit()(pd.read_csv)(url,header=lines_to_discard)
-        return frame
 
-    #quandl limits concurrency, no chance to optimize by reading all the data concurrently.
-    frames =  (add_symbol_and_set_index(f(read_csv_from_web(url,n)),sym) for (url,sym,n,f) in z)
+    async with aiohttp.ClientSession() as session:
+        @u.timeit()
+        async def read_csv_from_web(url,lines_to_discard):
+            logging.debug(f"\nReading URL {url} lines_to_discard {lines_to_discard}")
+            #save the csv files for inspection.
+            cache_file_name =  urlparse(url).path.split('/')[-1]
 
-    frames=list(frames)
+            async with session.get(url) as resp:
+                text=await resp.text()
+            logging.debug(f"\nWriting file   {cache_file_name} ")   
+            
+            async with aiofiles.open(cache_file_name, mode='w',newline='') as f:
+                 await f.write(text)
+
+            input_stream=io.StringIO(text)
+            frame= u.timeit()(pd.read_csv)(input_stream,header=lines_to_discard)
+            return frame
+        #frames with the columns fixed
+
+        frames_coro =  (read_csv_from_web(url,n)  for (url,sym,n,f) in z)
+        frames_unfixed = await asyncio.gather(*frames_coro)
+        frames_z = list(zip(frames_unfixed,  simple_data_symbols,fixups))
+        frames = list(add_symbol_and_set_index(f(t_frame),sym) for (t_frame,sym,f) in frames_z)
+
+
     all_vix_cash = pd.concat(frames)
     all_vix_cash['Trade Date']=pd.to_datetime(all_vix_cash['Trade Date'])
 
@@ -110,7 +134,7 @@ def get_vix_index_histories(vix1y_url):
     df = all_vix_cash.pivot(index='Trade Date',columns="Symbol")
 
     logging.debug(f"stacked \n{df['Close']}")
-    logging.warn(f"Warning, vix1y being read from {vix1y_dashboard}, you have to manually update it ")
+    logging.warn(f"Warning, vix1y not being being read   ")
 
 
 

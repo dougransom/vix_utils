@@ -2,6 +2,8 @@ import vix_futures_term_struture as v
 import vix_cash_term_structure as cash
 import pandas as pd
 import logging as logging
+import asyncio
+
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
 load_from_cache=False
@@ -19,6 +21,7 @@ pd.set_option('display.max_colwidth', None)
 
 if True:
 
+    loop = asyncio.get_event_loop()
 
     # define a Handler which writes INFO messages or higher to the sys.stderr
     logger = logging.getLogger()
@@ -50,7 +53,7 @@ if True:
 
     if not load_from_cache:
         futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,9)
-        cash_vix = cash.get_vix_index_histories("file:VIX1Y_Data.csv")
+        cash_vix = loop.run_until_complete(cash.get_vix_index_histories())
         futures_term_structure.to_pickle("futures_term_structure.pkl")
         cash_vix.to_pickle("cash_term_structure.pkl")
         logging.info("Saved futures term structure to cache")
@@ -99,6 +102,7 @@ if True:
              logger.warn(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
                         are required to run the plots in this example. Install them into your environment if you want to
                         see the graphs.""")
+        loop.close()
 
 
 
