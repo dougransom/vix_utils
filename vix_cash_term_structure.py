@@ -2,14 +2,15 @@ import  pandas as pd
 import utils.futures_utils as u
 import logging as logging
 
-_vix_index_history = "http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/vixcurrent.csv"
-_vvx_history ="http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/vvixtimeseries.csv"
-_vix9d_history= "http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/vix9ddailyprices.csv"
-_vix3m_history = "http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/vix3mdailyprices.csv"
-_vix6m_history = "http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/vix6mdailyprices.csv"
+# https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vixcurrent.csv
+_vix_index_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vixcurrent.csv"
+_vvx_history ="https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vvixtimeseries.csv"
+_vix9d_history= "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vix9ddailyprices.csv"
+_vix3m_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vix3mdailyprices.csv"
+_vix6m_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/vix6mdailyprices.csv"
 #this is kind of a fragile way to get it, but no data published as above
 
-_gvz_history = "http://www.cboe.com/publish/scheduledtask/mktdata/datahouse/gvzhistory.csv"
+_gvz_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/gvzhistory.csv"
 
 #todo add symbols OVX,VSLV,VXGDX,VXXLE,VXN
 
@@ -23,7 +24,7 @@ _vix1y_history = "https://www.cboe.com/chart/GetDownloadData/?RequestSymbol=VIX1
 
 def symbol_to_url(sym):
     ''' Works for some of the CBOE indexes'''
-    return f"http://www.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
+    return f"https://ww2.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
 
 stu=symbol_to_url           #safe some typing
 

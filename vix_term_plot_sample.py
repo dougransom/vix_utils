@@ -49,7 +49,7 @@ if True:
     wide_vix_calendar=v.vix_futures_trade_dates_and_settlement_dates()
 
     if not load_from_cache:
-        futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,3)
+        futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,9)
         cash_vix = cash.get_vix_index_histories("file:VIX1Y_Data.csv")
         futures_term_structure.to_pickle("futures_term_structure.pkl")
         cash_vix.to_pickle("cash_term_structure.pkl")
@@ -66,6 +66,10 @@ if True:
 
     logging.info(f"Vix Futures Weights for continuous maturities")
     ft3=v.vix_constant_maturity_weights(wide_vix_calendar)
+
+    ft4=v.vix_continuous_maturity_term_structure(wide_vix_calendar,futures_term_structure)
+    print(f"ft4\n{ft4}")
+
     if True:
         try:
             import matplotlib.pyplot as plt
@@ -75,6 +79,8 @@ if True:
             futures_term_structure[['Close']].plot()
 
 #            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
+            plt.show()
+            ft4[['Close']].plot()
             plt.show()
 #            print(f"cash vix\n{cash_vix}")
             a=ft2[['VIX1M_SPVIXSTR']]

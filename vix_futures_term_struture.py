@@ -30,7 +30,7 @@ _first_vix_futures_date_date="2005-06-20"
 
 #don't use this for the date range.  _valid_cfe_days should go a year past the last trade date
 
-_valid_cfe_days = pd.DatetimeIndex(_cfe_calendar.valid_days(_first_vix_futures_date_date, end_date=_last_valid_cfe_day).date).to_series()
+_valid_cfe_days = pd.DatetimeIndex(_cfe_calendar.valid_days(_first_vix_futures_date_date, end_date=_last_valid_cfe_day).date).to_series().sort_index()
 
 
 #days = _valid_cfe_days.date
@@ -140,12 +140,23 @@ def vix_constant_maturity_weights(vix_calendar):
     df_foo[fmw]=front_month_weight=trade_days_to_settle/df_foo[rptd]
 
     df_foo[smw]=weight_second_month = -1*front_month_weight+1
+    ttr = "Temp Trade Date"
+    df_foo[ttr]=df_foo.index.to_series()
+    ll=len(df_foo)
+    def maturity_date(row):
+        #Use the trade date X trade days later, where X is the current roll period
+        # in trade days.
+        n = row[ttr]
+        roll_window_length_trade_days=trade_days_to_settle[rptd]
+        ii = row.get_loc(n)
+        jj=ii+roll_window_length_trade_days
+        trade_date_end_of_roll=pd.nan if jj>ll else df_foo.iloc[jj].at(ttr)
+        return trade_date_end_of_roll
 
+    constant_maturity_dates=df_foo.apply(maturity_date, axis=1, result_type='expand')
+    df_foo["Notional Settlement Date"]=constant_maturity_dates
+    df_foo.drop(ttr)
     print(f"\nDF Foo \n{df_foo}")
-#    print(f"Weight second month \n{weight_second_month}")
-#    front_contribution=vix_term_structure["Close"][1]*vix_term_structure[spxvstr_w]
-#    second_contribution=weight_second_month*vix_term_structure["Close"][2]
-
 
     return df_foo
 
@@ -202,14 +213,38 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
         return df
 
     months = tuple(range(1, 1 + number_of_futures_maturities))
-    # add in the settlment date and contract month columns
+    # add in the settlement date and contract month columns
     settle_date_frames = (add_columns_d(m) for m in months)
     vix_all_months = u.timeit()(pd.concat)(settle_date_frames)
 
     # pivot the data so that it can be indexed by TradeDate and Contract Month
     cols = vix_all_months.columns
     unstacked = pivot_on_contract_maturity(vix_all_months)
+    print(f"unstacked: \{unstacked}")
     return unstacked
+
+
+def vix_continuous_maturity_term_structure(wide_settlement_calendar,vix_term_structure):
+
+    weights_df=vix_constant_maturity_weights(wide_settlement_calendar)
+
+    def weight(month):
+        cmdf = pd.DataFrame(index=vix_term_structure.index)
+
+        weighted_close = weights_df["Front Month Weight"] * vix_term_structure['Close'][month] + \
+                         weights_df["Next Month Weight"] * vix_term_structure['Close'][month + 1]
+        cmdf['Close'] = weighted_close
+        cmdf['Maturity Month'] = month
+        return cmdf
+
+
+    weighted_frames=(weight(month) for month in range(1,8))
+    merged_df=pd.concat(weighted_frames)
+    return merged_df.reset_index().pivot(columns="Maturity Month", index="Trade Date")
+
+
+
+
 
 @u.timeit()
 def vix_futures_term_structure(quandl_api_key,wide_settlement_calendar,number_of_futures_maturities=3):
