@@ -149,14 +149,19 @@ def vix_constant_maturity_weights(vix_calendar):
         # in trade days.
         trade_date = row[ttr]
         try:
-            roll_period_trade_days=trade_days_to_settle[trade_date]
+            roll_period_trade_days= row[rptd]              #trade_days_to_settle[trade_date]
+            print(f"\n trade_date {trade_date} roll period trade days {roll_period_trade_days}")
             trade_date_loc = trade_days_to_settle.index.get_loc(trade_date)
             trade_date_loc_end_of_roll = trade_date_loc + roll_period_trade_days
             trade_date_loc_end_of_roll_capped = pd.nan if trade_date_loc_end_of_roll > ll else trade_date_loc_end_of_roll
+            print(f"\n trade_date_loc {trade_date_loc} trade_date_end_of_roll_loc_capped  {trade_date_loc_end_of_roll_capped}")
+
             trade_date_end_of_roll= df_foo.iloc[trade_date_loc_end_of_roll_capped].at[ttr]
+            print(f"\n trade_date  end of roll  {trade_date_end_of_roll}")
             return trade_date_end_of_roll
         except Exception as e:
-            print(f"Error {e} on row {row}")
+            pass
+            #print(f"Error {e} on row {row}")
         return pd.NaT
 
     constant_maturity_dates=df_foo.apply(maturity_date, axis=1, result_type='expand')

@@ -8,7 +8,8 @@ import asyncio
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
 
 load_wide_vix_calendar_from_cache=True
-load_from_cache=False
+load_vix_futures_from_cache=True
+load_vix_cash_from_cache=True
 
 #pd.set_option('display.max_rows', )
 #need over two months
@@ -30,7 +31,7 @@ if True:
 
     # create console handler and set level to info
     handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(logging.INFO)
     formatter = logging.Formatter("%(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -56,17 +57,23 @@ if True:
         wide_vix_calendar.to_pickle("wide_vix_calendar.pkl")
     else:
         wide_vix_calendar = pd.read_pickle("wide_vix_calendar.pkl")
-
-    if not load_from_cache:
+    logging.info(f"Vix Futures Term Structure")
+    if not load_vix_futures_from_cache:
         futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,9)
-        cash_vix = loop.run_until_complete(cash.get_vix_index_histories())
         futures_term_structure.to_pickle("futures_term_structure.pkl")
-        cash_vix.to_pickle("cash_term_structure.pkl")
         logging.info("Saved futures term structure to cache")
     else:
         futures_term_structure = pd.read_pickle("futures_term_structure.pkl")
-        cash_vix = pd.read_pickle("cash_term_structure.pkl")
         logging.info("Loaded term structure from cache")
+
+    logging.info("Vix Cash Term Structure")
+    if not load_vix_cash_from_cache:
+        cash_vix = loop.run_until_complete(cash.get_vix_index_histories())
+        cash_vix.to_pickle("cash_term_structure.pkl")
+    else:
+         cash_vix = pd.read_pickle("cash_term_structure.pkl")
+
+
 
 
 #    logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
@@ -74,8 +81,10 @@ if True:
 #    ft2=v.vix_constant_maturity(futures_term_structure)
 
     logging.info(f"Vix Futures Weights for continuous maturities")
+    #shring the wide_vix_calendar for debugging
+    wide_vix_calendar = wide_vix_calendar[0:200]
     ft3=v.vix_constant_maturity_weights(wide_vix_calendar)
-
+    logging.info(f"Vix Continuous Maturity Term Structure")
     ft4=v.vix_continuous_maturity_term_structure(wide_vix_calendar,futures_term_structure)
     print(f"ft4\n{ft4}")
 
