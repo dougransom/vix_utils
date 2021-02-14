@@ -81,8 +81,8 @@ if True:
 #    ft2=v.vix_constant_maturity(futures_term_structure)
 
     logging.info(f"Vix Futures Weights for continuous maturities")
-    #shring the wide_vix_calendar for debugging
-    wide_vix_calendar = wide_vix_calendar[0:200]
+    #shrink the wide_vix_calendar for debugging
+    wide_vix_calendar = wide_vix_calendar[20:200]
     ft3=v.vix_constant_maturity_weights(wide_vix_calendar)
     logging.info(f"Vix Continuous Maturity Term Structure")
     ft4=v.vix_continuous_maturity_term_structure(wide_vix_calendar,futures_term_structure)

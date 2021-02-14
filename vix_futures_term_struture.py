@@ -119,6 +119,10 @@ def vix_constant_maturity_weights(vix_calendar):
     cols_to_copy={"Settle 1": vix_calendar['Settlement Date'][1], "Settle 2": vix_calendar['Settlement Date'][2]}
     df_foo = pd.DataFrame(index=vix_calendar.index,data=cols_to_copy)
 
+    df_foo[rptd]=-1001  #just a nonsense number we can identify
+
+    df_foo[rptd]= df_foo[rptd].astype(int)
+
     #add the start of roll date for front month
 
     df_foo[srfm]=np.nan
@@ -128,6 +132,7 @@ def vix_constant_maturity_weights(vix_calendar):
         df_foo.loc[selected,srfm]=start_roll
         roll_period_trade_days = cfe_exchange_open_days(start_roll,ix)
         df_foo.loc[selected,rptd]= roll_period_trade_days
+
 
     df_foo[srfm]=pd.to_datetime(df_foo[srfm])
     df_foo[rpcd]=vix_calendar[sd][1]-df_foo[srfm]
