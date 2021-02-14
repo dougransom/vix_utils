@@ -6,8 +6,9 @@ import asyncio
 
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
-load_from_cache=False
 
+load_wide_vix_calendar_from_cache=True
+load_from_cache=False
 
 #pd.set_option('display.max_rows', )
 #need over two months
@@ -48,8 +49,13 @@ if True:
 
 
 
-    logging.info(f"Trade and Settlement Dates")
-    wide_vix_calendar=v.vix_futures_trade_dates_and_settlement_dates()
+    logging.info(f"Wide Vix Calendar")
+
+    if not load_wide_vix_calendar_from_cache:
+        wide_vix_calendar=v.vix_futures_trade_dates_and_settlement_dates()
+        wide_vix_calendar.to_pickle("wide_vix_calendar.pkl")
+    else:
+        wide_vix_calendar = pd.read_pickle("wide_vix_calendar.pkl")
 
     if not load_from_cache:
         futures_term_structure = v.vix_futures_term_structure(quandl_api_key,wide_vix_calendar,9)

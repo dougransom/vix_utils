@@ -107,7 +107,7 @@ def vix_constant_maturity_weights(vix_calendar):
     :return:
     """
 
-    #create a map from settlment dates to the previous settlement dates
+    #create a map from settlement dates to the previous settlement dates
     #this is done by looking at month 2 settlment dates, and finding the month 1 settlement date
 
     srfm="Start Roll Front Month"
@@ -127,7 +127,7 @@ def vix_constant_maturity_weights(vix_calendar):
         selected = vix_calendar[sd][1]==ix
         df_foo.loc[selected,srfm]=start_roll
         roll_period_trade_days = cfe_exchange_open_days(start_roll,ix)
-        df_foo.loc[selected,rptd]=roll_period_trade_days
+        df_foo.loc[selected,rptd]= roll_period_trade_days
 
     df_foo[srfm]=pd.to_datetime(df_foo[srfm])
     df_foo[rpcd]=vix_calendar[sd][1]-df_foo[srfm]
@@ -138,24 +138,30 @@ def vix_constant_maturity_weights(vix_calendar):
     smw="Next Month Weight"
     trade_days_to_settle=df_foo[tdts]=vix_calendar[tdts][1]
     df_foo[fmw]=front_month_weight=trade_days_to_settle/df_foo[rptd]
-
     df_foo[smw]=weight_second_month = -1*front_month_weight+1
     ttr = "Temp Trade Date"
     df_foo[ttr]=df_foo.index.to_series()
+#    temp_tdts="Temporary Trade Days to Settlement"
+#    df_foo[temp_tdts]=df_foo[tdts]
     ll=len(df_foo)
     def maturity_date(row):
         #Use the trade date X trade days later, where X is the current roll period
         # in trade days.
-        n = row[ttr]
-        roll_window_length_trade_days=trade_days_to_settle[rptd]
-        ii = row.get_loc(n)
-        jj=ii+roll_window_length_trade_days
-        trade_date_end_of_roll=pd.nan if jj>ll else df_foo.iloc[jj].at(ttr)
-        return trade_date_end_of_roll
+        trade_date = row[ttr]
+        try:
+            roll_period_trade_days=trade_days_to_settle[trade_date]
+            trade_date_loc = trade_days_to_settle.index.get_loc(trade_date)
+            trade_date_loc_end_of_roll = trade_date_loc + roll_period_trade_days
+            trade_date_loc_end_of_roll_capped = pd.nan if trade_date_loc_end_of_roll > ll else trade_date_loc_end_of_roll
+            trade_date_end_of_roll= df_foo.iloc[trade_date_loc_end_of_roll_capped].at[ttr]
+            return trade_date_end_of_roll
+        except Exception as e:
+            print(f"Error {e} on row {row}")
+        return pd.NaT
 
     constant_maturity_dates=df_foo.apply(maturity_date, axis=1, result_type='expand')
     df_foo["Notional Settlement Date"]=constant_maturity_dates
-    df_foo.drop(ttr)
+    df_foo.drop(ttr,axis=1,inplace=True)
     print(f"\nDF Foo \n{df_foo}")
 
     return df_foo

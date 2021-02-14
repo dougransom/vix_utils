@@ -103,7 +103,6 @@ async def get_vix_index_histories():
         return frame
 
     async with aiohttp.ClientSession() as session:
-        @u.timeit()
         async def read_csv_from_web(url,lines_to_discard):
             logging.debug(f"\nReading URL {url} lines_to_discard {lines_to_discard}")
             #save the csv files for inspection.
@@ -117,7 +116,7 @@ async def get_vix_index_histories():
                  await f.write(text)
 
             input_stream=io.StringIO(text)
-            frame= u.timeit()(pd.read_csv)(input_stream,header=lines_to_discard)
+            frame=  pd.read_csv(input_stream,header=lines_to_discard)
             return frame
         #frames with the columns fixed
 
