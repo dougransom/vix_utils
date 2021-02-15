@@ -79,6 +79,14 @@ def vix_futures_settlement_date_monthly( year :int, month : int):
     return futures_expiry_date
 
 def vix_futures_settlement_date_from_trade_date(year,month,day,tenor):
+    """
+    :param year:  year of trade date
+    :param month:  month of trade date
+    :param day:    day of trade date
+    :param tenor:   1 is the front  month, 2 the second, etc.
+    :return:   VIX Futures Settlement Date
+    """
+
     '''tenor is the number of months (or part months) to expiration.  the front month tenor is 1'''
     this_calendar_months_settlement=vix_futures_settlement_date_monthly(year,month)
     #deal with the part of the month, where the settlment month is the following month
@@ -90,6 +98,16 @@ def vix_futures_settlement_date_from_trade_date(year,month,day,tenor):
 
 def vix_constant_maturity_weights(vix_calendar):
     """
+    :param vix_calendar:  the DataFrame returned by  vix_futures_trade_dates_and_settlement_dates
+    :return: a DataFrame containting the weights required to interpolate between the tenors of trading tenors of
+    Vix Futures to have a term structure of constant maturity in months.
+
+    This index, for example, https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview,
+    is based on a 1 month interpolation of the 1st and 2nd month futures.  The DataFrame returned shold provide the weights required
+    to calculate that index for any trade date.  Several ETFs are constructed from such indexes or weightings.
+
+    Here is roughly how it works.
+
     dt=number of business days in the current roll period
     dr=number of business days remaining in the current roll period
     front_month_weight=dr/dt
@@ -101,10 +119,6 @@ def vix_constant_maturity_weights(vix_calendar):
     settlement_dates=vix_term_structure["Settlement Date"]
     vix_term_structure
 
-    https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview
-
-    :param vix_calendar:
-    :return:
     """
 
     #create a map from settlement dates to the previous settlement dates
@@ -184,10 +198,11 @@ def cfe_exchange_open_days(start_date,end_date):
 
 @u.timeit()
 def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9):
-    """
-
+    f"""
     :param number_of_futures_maturities:
-        :return:  a data frame with an index of trade date and maturity (in months) and a value of the Settlement Date
+        :return:  a data frame with an index of trade date and maturity (in months) and a value of the Settlement Date.  
+                   We refer to a DataFrame in this format as a wide vix calendar or wide settlement calendar..
+                   The dates will include all past dates which the VIX futures have traded, and future dates until {_future_date}"
         """
     #by trial and error, this gives us the day
     #careful to select the portion of the valid dates before _future_date
@@ -230,7 +245,7 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
     # pivot the data so that it can be indexed by TradeDate and Contract Month
     cols = vix_all_months.columns
     unstacked = pivot_on_contract_maturity(vix_all_months)
-    print(f"unstacked: \{unstacked}")
+    #print(f"unstacked: \{unstacked}")
     return unstacked
 
 

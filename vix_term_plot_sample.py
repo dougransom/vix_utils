@@ -8,7 +8,7 @@ import asyncio
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
 
 load_wide_vix_calendar_from_cache=False
-load_vix_futures_from_cache=True
+load_vix_futures_from_cache=False
 load_vix_cash_from_cache=False
 
 #pd.set_option('display.max_rows', )
@@ -23,7 +23,7 @@ pd.set_option('display.max_colwidth', None)
 
 if True:
 
-    loop = asyncio.get_event_loop()
+ #   loop = asyncio.get_event_loop()
 
     # define a Handler which writes INFO messages or higher to the sys.stderr
     logger = logging.getLogger()
