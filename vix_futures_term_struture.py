@@ -38,7 +38,7 @@ _valid_cfe_days = pd.DatetimeIndex(_cfe_calendar.valid_days(_first_vix_futures_d
 
 
 @func.lru_cache(maxsize=None)       #called repeatedly with the same values, so cache the results.
-def vix_futures_settlement_date_monthly( year, month):
+def vix_futures_settlement_date_monthly( year :int, month : int):
     """
     Return the date of expiry of Vix Monthly Futures the series expiring in year and month
     :param year: The year of futures expiry
@@ -155,14 +155,10 @@ def vix_constant_maturity_weights(vix_calendar):
         trade_date = row[ttr]
         try:
             roll_period_trade_days= row[rptd]              #trade_days_to_settle[trade_date]
-            print(f"\n trade_date {trade_date} roll period trade days {roll_period_trade_days}")
             trade_date_loc = trade_days_to_settle.index.get_loc(trade_date)
             trade_date_loc_end_of_roll = trade_date_loc + roll_period_trade_days
             trade_date_loc_end_of_roll_capped = pd.nan if trade_date_loc_end_of_roll > ll else trade_date_loc_end_of_roll
-            print(f"\n trade_date_loc {trade_date_loc} trade_date_end_of_roll_loc_capped  {trade_date_loc_end_of_roll_capped}")
-
             trade_date_end_of_roll= df_foo.iloc[trade_date_loc_end_of_roll_capped].at[ttr]
-            print(f"\n trade_date  end of roll  {trade_date_end_of_roll}")
             return trade_date_end_of_roll
         except Exception as e:
             pass
@@ -172,8 +168,6 @@ def vix_constant_maturity_weights(vix_calendar):
     constant_maturity_dates=df_foo.apply(maturity_date, axis=1, result_type='expand')
     df_foo["Notional Settlement Date"]=constant_maturity_dates
     df_foo.drop(ttr,axis=1,inplace=True)
-    print(f"\nDF Foo \n{df_foo}")
-
     return df_foo
 
 
@@ -241,6 +235,13 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
 
 
 def vix_continuous_maturity_term_structure(wide_settlement_calendar,vix_term_structure):
+    """Returns a constant maturity in months for the vix futures term structure by interpolating
+    between the two months.
+    https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview
+    The weights are the weights   """
+
+
+
 
     weights_df=vix_constant_maturity_weights(wide_settlement_calendar)
 

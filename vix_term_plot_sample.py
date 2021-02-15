@@ -7,13 +7,13 @@ import asyncio
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
 
-load_wide_vix_calendar_from_cache=True
+load_wide_vix_calendar_from_cache=False
 load_vix_futures_from_cache=True
-load_vix_cash_from_cache=True
+load_vix_cash_from_cache=False
 
 #pd.set_option('display.max_rows', )
 #need over two months
-pd.set_option('display.min_rows', 100)
+pd.set_option('display.min_rows', 10)
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
@@ -68,25 +68,27 @@ if True:
 
     logging.info("Vix Cash Term Structure")
     if not load_vix_cash_from_cache:
-        cash_vix = loop.run_until_complete(cash.get_vix_index_histories())
+        cash_vix = asyncio.run(cash.get_vix_index_histories())
         cash_vix.to_pickle("cash_term_structure.pkl")
     else:
          cash_vix = pd.read_pickle("cash_term_structure.pkl")
 
+    sep_lines = "_"*25+"\n"
 
-
-
-#    logging.info(f"\nVix Futures Term Structure {futures_term_structure}")
+    print(f"\nVix Futures Term Structure\n{futures_term_structure}\n{sep_lines}")
 
 #    ft2=v.vix_constant_maturity(futures_term_structure)
 
     logging.info(f"Vix Futures Weights for continuous maturities")
     #shrink the wide_vix_calendar for debugging
-    wide_vix_calendar = wide_vix_calendar[20:200]
-    ft3=v.vix_constant_maturity_weights(wide_vix_calendar)
+    #wide_vix_calendar = wide_vix_calendar[20:200]
+
+    constant_maturity_weights=v.vix_constant_maturity_weights(wide_vix_calendar)
+    print(f"\nConstant maturity weights:\n{constant_maturity_weights}")
+
     logging.info(f"Vix Continuous Maturity Term Structure")
-    ft4=v.vix_continuous_maturity_term_structure(wide_vix_calendar,futures_term_structure)
-    print(f"ft4\n{ft4}")
+    vix_cont_maturity_term_structure=v.vix_continuous_maturity_term_structure(wide_vix_calendar,futures_term_structure)
+    print(f"Continuous maturity term struture\n{vix_cont_maturity_term_structure}\n{sep_lines}")
 
     if True:
         try:
@@ -98,10 +100,10 @@ if True:
 
 #            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
             plt.show()
-            ft4[['Close']].plot()
+            vix_cont_maturity_term_structure[['Close']].plot()
             plt.show()
 #            print(f"cash vix\n{cash_vix}")
-            a=ft2[['VIX1M_SPVIXSTR']]
+#            a=ft2[['VIX1M_SPVIXSTR']]
             b=cash_vix['Close'][['RVOL', 'VIX']]
             b['VIX1M_SPVIXSTR']=a['VIX1M_SPVIXSTR']
 
@@ -114,10 +116,9 @@ if True:
             plt.show()
 
         except Exception as e:
-             logger.warn(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
+             logger.warning(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
                         are required to run the plots in this example. Install them into your environment if you want to
                         see the graphs.""")
-        loop.close()
 
 
 

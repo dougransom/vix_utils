@@ -27,22 +27,30 @@ _gvz_history = "https://ww2.cboe.com/publish/scheduledtask/mktdata/datahouse/gvz
 #_vix1y_history = "https://www.cboe.com/chart/GetDownloadData/?RequestSymbol=VIX1Y"
 
 
-def symbol_to_url(sym):
-    ''' Works for some of the CBOE indexes.
+def _symbol_to_url(sym: str) -> str:
+    """
+
+    :param sym:  A symbol of a CBOE published index
+    :return: the URL to download the index historical data from.
+
+    Works for some of the CBOE indexes.
     You can find a variety of indexes using the CBOE global index search.
     https://ww2.cboe.com/index.
-    '''
+    """
     return f"https://ww2.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
 
-stu=symbol_to_url           #safe some typing
+_stu=_symbol_to_url           #safe some typing
 
 # use this URL to browse and find the index data
-cboe_indexes= "https://www.cboe.com/index/indexes"
-vix1y_dashboard="https://www.cboe.com/index/dashboard/vix1y"
+_cboe_indexes= "https://www.cboe.com/index/indexes"
+_vix1y_dashboard= "https://www.cboe.com/index/dashboard/vix1y"
 
 
 async def get_vix_index_histories():
 
+
+    #the variious fix_..columns rename columns of to be consistent with "Close" and "Trade Date"
+    #as the various data files from CBOE aren't consistent
     def fix_vvix_columns(df):
         df = df.rename(columns={"VVIX": "Close", "Date": "Trade Date"})
         return df
@@ -76,10 +84,10 @@ async def get_vix_index_histories():
         df.columns=['Trade Date','Close']
         return df
 
-    #ones that just have  a trade date, close, and predicatable URL
+    #these symbols have  a trade date, close, and predicatable URL
     simple_data_symbols=["RVOL","RVOL3M","RVOL6M","RVOL12M","SMILE"]
 
-    simple_data_urls=[stu(sym) for sym in simple_data_symbols]
+    simple_data_urls=[_stu(sym) for sym in simple_data_symbols]
     simple_data_lines_to_discard=[1]*len(simple_data_urls)
     simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
 
@@ -87,6 +95,7 @@ async def get_vix_index_histories():
     simple_data_urls
     index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M","GVZ"]+simple_data_symbols
 
+    #various files from CBO have lines above the CSV data that need to be tossed.
     num_lines_to_discard = [1, 1, 3, 2, 2,1]+simple_data_lines_to_discard
 
 
@@ -97,13 +106,27 @@ async def get_vix_index_histories():
     z = list(zip(index_history_urls, index_history_symbols, num_lines_to_discard, fixups))
 
     def add_symbol_and_set_index(frame, symbol):
+        """
+
+        :param frame: a data frame with at least a trade date column
+        :param symbol: the symbol for the data in this table
+        :return: the data frame, modified to have an index of Trade Date and a column "Symbol" with the symbol.
+        """
         frame["Symbol"] = symbol
         frame["Trade Date"]=pd.to_datetime(frame["Trade Date"])
         frame.set_index("Trade Date")
         return frame
 
     async with aiohttp.ClientSession() as session:
+
         async def read_csv_from_web(url,lines_to_discard):
+            """
+
+            :param url:
+            :param lines_to_discard:
+            :return: a data from from reading the data at url, discarding lines_to_discard lines
+            before parsing the CSV into a DataFrame.  The CSV file is also saved.
+            """
             logging.debug(f"\nReading URL {url} lines_to_discard {lines_to_discard}")
             #save the csv files for inspection.
             cache_file_name =  urlparse(url).path.split('/')[-1]
@@ -122,6 +145,7 @@ async def get_vix_index_histories():
 
         frames_coro =  (read_csv_from_web(url,n)  for (url,sym,n,f) in z)
         frames_unfixed = await asyncio.gather(*frames_coro)
+        #fix up the columns (renaming them to be consistent, add the symbols as a column)
         frames_z = list(zip(frames_unfixed,  simple_data_symbols,fixups))
         frames = list(add_symbol_and_set_index(f(t_frame),sym) for (t_frame,sym,f) in frames_z)
 
@@ -133,7 +157,7 @@ async def get_vix_index_histories():
     df = all_vix_cash.pivot(index='Trade Date',columns="Symbol")
 
     logging.debug(f"stacked \n{df['Close']}")
-    logging.warn(f"Warning, vix1y not being being read   ")
+    logging.warning(f"Warning, vix1y not being being read   ")
 
 
 
