@@ -5,3 +5,5 @@
 **/natlink.pyd
 **/natlinkstatus.ini
 /README.html
+/.vscode
+/*.code-workspace
