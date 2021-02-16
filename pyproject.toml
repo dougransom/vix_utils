@@ -22,9 +22,10 @@ requires = [
     "aiofiles",
     "aiohttp",
     "matplotlib",
-    "scipy"]
+    "scipy",
+    "openpyxl"]
 
 
 keywords="vix,volatility,pandas,vix term structure"
 [tool.flit.scripts]
-vixutil = "vixutil:main"
+vixutil = "vix_utils.vixutil:main"

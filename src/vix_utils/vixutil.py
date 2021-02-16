@@ -1,6 +1,6 @@
 import argparse
-import vix_futures_term_struture as v
-import vix_cash_term_structure as cash
+import vix_utils.vix_futures_term_struture as v
+import vix_utils.vix_cash_term_structure as cash
 import pandas as pd
 import logging as logging
 import asyncio
@@ -8,7 +8,8 @@ import os.path as ospath
 import pathlib
 import configparser
 
-from futures_utils import timeit
+from vix_utils.futures_utils import timeit
+
 
 quandl_api_key=f"This is not a valid quandle key {__file__}"
 from pathlib import Path

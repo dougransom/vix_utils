@@ -1,5 +1,5 @@
 import  pandas as pd
-import futures_utils as u
+import vix_utils.futures_utils as u
 import logging as logging
 from urllib.parse import urlparse
 import aiofiles
