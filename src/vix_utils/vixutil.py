@@ -13,10 +13,16 @@ from futures_utils import timeit
 quandl_api_key=f"This is not a valid quandle key {__file__}"
 from pathlib import Path
 
+override_data_path=False
+
+
+
 def _vix_util_data_Path():
     """
     :return: the path where VIX term structure and calendar data are stored.
     """
+    if override_data_path:
+        return Path(overide_data_path)
     user_path=Path.home()
     print(user_path)
     vixutil_path = user_path / ".vixutil"
@@ -153,7 +159,7 @@ def write_config_file():
 def main():
     global quandl_api_key
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     logging.log(logging.DEBUG,"Debug message")
     formatter = logging.Formatter("%(levelname)s - %(message)s")
@@ -162,6 +168,10 @@ def main():
 
     read_config_file()
     args=parser.parse_args()
+
+    if(args.info):
+        print(f"Data and config file are stored in {_vix_util_data_Path()}")
+
     if(args.quandl_api_key):
         quandl_api_key=args.quandl_api_key()
 

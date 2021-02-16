@@ -8,3 +8,4 @@
 /.vscode
 /*.code-workspace
 /dist
+/test_output
