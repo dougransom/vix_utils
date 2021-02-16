@@ -6,10 +6,11 @@ import logging as logging
 import asyncio
 import os.path as ospath
 import pathlib
+import configparser
 
 from futures_utils import timeit
 
-quandl_api_key="5cDGQqduzQgmM_2zfkd1"
+quandl_api_key=f"This is not a valid quandle key {__file__}"
 from pathlib import Path
 
 def _vix_util_data_Path():
@@ -116,7 +117,11 @@ output_format_help="""The file extension determines the file type. Valid extensi
       * xslx  for excel.
       * pkl  for pickle format.  Python programmers are better off to use the API.
       * csv for csf format"""
+
 parser.add_argument("-i",help = "information about where the data is stored",dest='info',action='store_true')
+parser.add_argument("-s", help = 'Store  Quandle API Key supplied with -q in config file ',dest="store_quandle_api_key",action='store_true')
+parser.add_argument("-q", help='Quandle API Key',dest='quandl_api_key')
+
 parser.add_argument("-r", help = "rebuild the vix futures term structure and vix cash term stucture",action="store_true",dest='rebuild')
 parser.add_argument("-t",  dest="term_structure",help =
     f"""output the vix futures term structure to a file. {output_format_help}""")
@@ -128,10 +133,25 @@ f"""output the vix cash term structure a file. {output_format_help}.  Some other
 be included.  {output_format_help} """)
 
 
+def read_config_file():
+    config_file_path=_vix_util_data_Path()/'vixutil.config'
+    cp=configparser.ConfigParser()
+    cp.read(config_file_path)
+    global quandl_api_key
+    if "QUANDLE" in cp:
+        quandl_api_key=cp['QUANDLE']['QUANDLE_API_KEY']
+
+def write_config_file():
+    global quandl_api_key
+    config_file_path=_vix_util_data_Path()/'vixutil.config'
+    cp=configparser.ConfigParser()
+    cp['QUANDLE']={'QUANDLE_API_KEY': quandl_api_key}
+    with open(config_file_path, 'w') as configfile:
+        cp.write(configfile)
+
 
 def main():
-    args=parser.parse_args()
-
+    global quandl_api_key
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     handler = logging.StreamHandler()
@@ -139,6 +159,16 @@ def main():
     formatter = logging.Formatter("%(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+
+    read_config_file()
+    args=parser.parse_args()
+    if(args.quandl_api_key):
+        quandl_api_key=args.quandl_api_key()
+
+    if args.store_quandle_api_key:
+        write_config_file()
+
+
 
     vutils = VixUtilsApi()
     if args.rebuild:
