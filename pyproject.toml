@@ -13,3 +13,5 @@ classifiers = ["License :: OSI Approved :: MIT License",
 	"Topic :: Office/Business :: Financial :: Investment"]
 
 keywords="vix,volatility,pandas,vix term structure"
+[tool.flit.scripts]
+flit = "flit:main"

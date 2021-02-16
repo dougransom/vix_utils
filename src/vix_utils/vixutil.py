@@ -7,7 +7,7 @@ import asyncio
 import os.path as ospath
 import pathlib
 
-from utils.futures_utils import timeit
+from futures_utils import timeit
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
 from pathlib import Path

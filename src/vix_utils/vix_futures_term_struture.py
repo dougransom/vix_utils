@@ -10,7 +10,7 @@ import calendar as cal
 import datetime as dt
 import pandas_market_calendars as mcal
 import numpy as np
-import utils.futures_utils as u
+import futures_utils as u
 import quandl as ql
 
 
