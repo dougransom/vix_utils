@@ -5,6 +5,8 @@ import pandas as pd
 import logging as logging
 import asyncio
 import os.path as ospath
+import pathlib
+
 from utils.futures_utils import timeit
 
 quandl_api_key="5cDGQqduzQgmM_2zfkd1"
@@ -145,10 +147,21 @@ def main():
     vutils.get_vix_futures_constant_maturity_weights()
     cmt=vutils.get_vix_futures_constant_maturity_term_structure()
     cash=vutils.get_cash_vix_term_structure()
+    fts=vutils.get_vix_futures_term_structure()
+
+    extensions=[".csv",".pkl",".parquet",".hdf",".xlsx",".json",".html"]
+    functions=[fts.to_csv,fts.to_pickle,fts.to_parquet,fts.to_hdf,fts.to_excel,fts.to_json,fts.to_html]
+    extension_to_function_map=dict(zip(extensions,functions))
 
     if args.term_structure:
         ofile=args.term_structure
         print(f"Output file {ofile}")
+        suffix = pathlib.Path(ofile).suffix
+        if(suffix in extension_to_function_map):
+            fn=extension_to_function_map[suffix]
+            fn(ofile)
+        else:
+            print(f"Unsupported extension, only {extensions} are supported")
 
 
 main()
