@@ -11,7 +11,15 @@ classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",
 	"Topic :: Office/Business :: Financial :: Investment"]
+requires = [
+    "flit >=3.0",
+    "pandas",
+    "pandas-market-calendars",
+    "Quandl",
+    "aiofiles",
+    "aiohttp"]
+
 
 keywords="vix,volatility,pandas,vix term structure"
 [tool.flit.scripts]
-flit = "flit:main"
+vixutil = "vixutil:main"
