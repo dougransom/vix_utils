@@ -93,6 +93,11 @@ class VixUtilsApi:
         return self.get_or_make_helper(f,self._make_vix_futures_term_structure)
 
     @timeit()
+    def get_vix_futures_constant_maturity_weights(self):
+        f=self.data_path/"vix_futures_constant_maturity_weights.pkl"
+        def make_weights(): return v.vix_constant_maturity_weights(self.get_vix_trade_and_future_settlements())
+        return self.get_or_make_helper(f,make_weights)
+    @timeit()
     def get_vix_futures_constant_maturity_term_structure(self):
         f=self.data_path/_vix_futures_constant_maturity_term_structure_file
 
@@ -102,11 +107,7 @@ class VixUtilsApi:
 
         return self.get_or_make_helper(f,_make_vix_futures_constant_maturity_term_structure)
 
-    @timeit()
-    def get_vix_futures_constant_maturity_weights(self):
-        f=self.data_path/"vix_futures_constant_maturity_weights.pkl"
-        def make_weights(): return v.vix_constant_maturity_weights(self.get_vix_trade_and_future_settlements())
-        return self.get_or_make_helper(f,make_weights)
+
 
 
 

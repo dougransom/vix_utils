@@ -20,7 +20,9 @@ requires = [
     "pandas-market-calendars",
     "Quandl",
     "aiofiles",
-    "aiohttp"]
+    "aiohttp",
+    "matplotlib",
+    "scipy"]
 
 
 keywords="vix,volatility,pandas,vix term structure"
