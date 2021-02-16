@@ -46,7 +46,7 @@ _cboe_indexes= "https://www.cboe.com/index/indexes"
 _vix1y_dashboard= "https://www.cboe.com/index/dashboard/vix1y"
 
 
-async def get_vix_index_histories():
+async def get_vix_index_histories(data_directory):
 
 
     #the variious fix_..columns rename columns of to be consistent with "Close" and "Trade Date"
@@ -135,7 +135,7 @@ async def get_vix_index_histories():
                 text=await resp.text()
             logging.debug(f"\nWriting file   {cache_file_name} ")   
             
-            async with aiofiles.open(cache_file_name, mode='w',newline='') as f:
+            async with aiofiles.open(data_directory/cache_file_name, mode='w',newline='') as f:
                  await f.write(text)
 
             input_stream=io.StringIO(text)
