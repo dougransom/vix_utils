@@ -60,15 +60,11 @@ class VixUtilsApi:
         Most users will prefer to to use the command line program to perform this.
         :return:  nothing
         """
-        print("\nstarting")
+
         download_quandl_coro=asyncio.to_thread(v.download_quandle_data,quandl_api_key,self.data_path)
-
-        wide_vix_calendar_coro = asyncio.to_thread(v.vix_futures_trade_dates_and_settlement_dates)
         ch = asyncio.create_task(cash.get_vix_index_histories(self.data_path))
+        wide_vix_calendar_coro = asyncio.to_thread(v.vix_futures_trade_dates_and_settlement_dates)
         (cash_vix,_,wide_vix_calendar) = await asyncio.gather(ch,download_quandl_coro,wide_vix_calendar_coro)
-
-        print("\finished waiting")
-
 
         wide_vix_calendar.to_pickle(self.data_path/"wide_vix_calendar.pkl")
         cash_vix.to_pickle(self.data_path / _vix_cash_file)
@@ -116,29 +112,27 @@ class VixUtilsApi:
         return self.get_or_make_helper(f,_make_vix_futures_constant_maturity_term_structure)
 
 
-
+extensions=[".csv",".pkl",".parquet",".xlsx",".html"]  #supported output file types
 
 
 parser=argparse.ArgumentParser()
-output_format_help="""The file extension determines the file type. Valid extensions are:
-      * xslx  for excel.
-      * pkl  for pickle format.  Python programmers are better off to use the API.
-      * csv for csf format"""
+output_format_help=f"""The file extension determines the file type. Valid extensions are: {extensions}.
+\n  Python programmers may prefer to use the API """
 
 parser.add_argument("-i",help = "information about where the data is stored",dest='info',action='store_true')
 parser.add_argument("-s", help = 'Store  Quandle API Key supplied with -q in config file ',dest="store_quandle_api_key",action='store_true')
 parser.add_argument("-q", help='Quandle API Key',dest='quandl_api_key')
 
-parser.add_argument("-r", help = "rebuild the vix futures term structure and vix cash term stucture",action="store_true",dest='rebuild')
+parser.add_argument("-r", help = "download the data from Quandl and CBOE and rebuild the vix futures term structure and vix cash term stucture",action="store_true",dest='rebuild')
 parser.add_argument("-t",  dest="term_structure",help =
     f"""output the vix futures term structure to a file. {output_format_help}""")
-parser.add_argument("-m",  help =
+parser.add_argument("-m",  dest="continuous",help =
     f"""output the vix continuous maturity (i.e. interpolated) futures term structure to a file. {output_format_help}""")
 
-parser.add_argument("-c",  help=
-f"""output the vix cash term structure a file. {output_format_help}.  Some other indexes will from CBOE
-be included.  {output_format_help} """)
-
+parser.add_argument("-c", dest="cash",  help=
+f"""output the vix cash term structure a file. {output_format_help}.  Some other indexes from CBOE
+will also be included.  {output_format_help} """)
+parser.add_argument("--calendar", dest="calendar",  help="settlement dates for vix futures for a given trade date")
 
 def read_config_file():
     config_file_path=_vix_util_data_Path()/'vixutil.config'
@@ -155,6 +149,28 @@ def write_config_file():
     cp['QUANDLE']={'QUANDLE_API_KEY': quandl_api_key}
     with open(config_file_path, 'w') as configfile:
         cp.write(configfile)
+
+
+def write_frame(frame,ofile ):
+    def settlement_tenors_to_strings_in_columns(frame):
+        frame.columns = list( f"{a}_M_{b}" for (a, b) in frame.columns)
+        return frame
+
+    def to_parquet(ofile):
+        new_frame = settlement_tenors_to_strings_in_columns(pd.DataFrame(frame))
+        new_frame.to_parquet(ofile)
+        print(f"{new_frame} cols {new_frame.columns}")
+
+
+    functions=[frame.to_csv,frame.to_pickle,to_parquet,frame.to_excel,frame.to_html]
+    extension_to_function_map=dict(zip(extensions,functions))
+    print(f"Output file {ofile}")
+    suffix = pathlib.Path(ofile).suffix
+    if (suffix in extension_to_function_map):
+        fn = extension_to_function_map[suffix]
+        fn(ofile)
+    else:
+        print(f"Unsupported extension, only {extensions} are supported")
 
 
 def main():
@@ -174,7 +190,7 @@ def main():
         print(f"Data and config file are stored in {_vix_util_data_Path()}")
 
     if(args.quandl_api_key):
-        quandl_api_key=args.quandl_api_key()
+        quandl_api_key=args.quandl_api_key
 
     if args.store_quandle_api_key:
         write_config_file()
@@ -191,19 +207,18 @@ def main():
     cash=vutils.get_cash_vix_term_structure()
     fts=vutils.get_vix_futures_term_structure()
 
-    extensions=[".csv",".pkl",".parquet",".hdf",".xlsx",".json",".html"]
-    functions=[fts.to_csv,fts.to_pickle,fts.to_parquet,fts.to_hdf,fts.to_excel,fts.to_json,fts.to_html]
-    extension_to_function_map=dict(zip(extensions,functions))
 
-    if args.term_structure:
-        ofile=args.term_structure
-        print(f"Output file {ofile}")
-        suffix = pathlib.Path(ofile).suffix
-        if(suffix in extension_to_function_map):
-            fn=extension_to_function_map[suffix]
-            fn(ofile)
-        else:
-            print(f"Unsupported extension, only {extensions} are supported")
+    if ofile :=args.term_structure:
+        write_frame(fts,ofile)
 
+    if ofile :=args.continuous:
+        write_frame(cmt,ofile)
+
+    if ofile :=args.cash:
+        write_frame(cash,ofile)
+    if ofile := args.calendar:
+        write_frame(vutils.get_vix_trade_and_future_settlements(), ofile)
+
+    return 0
 
 main()
