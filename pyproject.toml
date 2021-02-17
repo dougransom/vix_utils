@@ -27,6 +27,6 @@ requires = [
     "pyarrow"]
 
 
-keywords="vix,volatility,pandas,vix term structure"
+keywords="vix,volatility,pandas,vix term structure,cboe,quandl"
 [tool.flit.scripts]
 vixutil = "vix_utils.vixutil:main"
