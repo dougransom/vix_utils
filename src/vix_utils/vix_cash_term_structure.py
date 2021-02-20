@@ -35,7 +35,7 @@ def _symbol_to_url(sym: str) -> str:
 
     Works for some of the CBOE indexes.
     You can find a variety of indexes using the CBOE global index search.
-    https://ww2.cboe.com/index.
+    https://ww2.cboe.com/index  and even more useful all on one page https://www.cboe.com/us/indices/indicesproducts/.
     """
     return f"https://ww2.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
 

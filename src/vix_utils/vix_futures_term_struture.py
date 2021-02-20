@@ -108,6 +108,8 @@ def vix_constant_maturity_weights(vix_calendar):
     is based on a 1 month interpolation of the 1st and 2nd month futures.  The DataFrame returned shold provide the weights required
     to calculate that index for any trade date.  Several ETFs are constructed from such indexes or weightings.
 
+    You can read more at https://sixfigureinvesting.com/2015/01/how-does-vxx-daily-roll-work/.
+
     Here is roughly how it works.
 
     dt=number of business days in the current roll period
@@ -256,9 +258,6 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar,vix_term_str
     between the two months.
     https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview
     The weights are the weights   """
-
-
-
 
     weights_df=vix_constant_maturity_weights(wide_settlement_calendar)
 

@@ -25,7 +25,6 @@ def _vix_util_data_Path():
     if override_data_path:
         return Path(overide_data_path)
     user_path=Path.home()
-    print(user_path)
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
     return vixutil_path
@@ -34,6 +33,7 @@ def _needs_update(output_file):
     #use the cached version if the code hasn't changed.  This makes development much
     #easier.
     return not ospath.exists(output_file) or ospath.getmtime(output_file) < ospath.getmtime(v.__file__)
+
 
 
 _vix_futures_constant_maturity_term_structure_file="vix_futures_constant_maturity_term_structure.pkl"
@@ -74,6 +74,9 @@ class VixUtilsApi:
         """Return the cash vix term structure.  """
         return pd.read_pickle(self.data_path/_vix_cash_file)
 
+    def  get_vix_continuous_future_weights(self):
+         return v.vix_constant_maturity_weights(self.get_vix_trade_and_future_settlements())
+
     def get_vix_trade_and_future_settlements(self):
         return pd.read_pickle(self.data_path/"wide_vix_calendar.pkl")
 
@@ -82,7 +85,6 @@ class VixUtilsApi:
         vt = v.vix_futures_term_structure(self.data_path,wide_vix_calendar)
         vt.to_pickle(self.data_path/_vix_futures_term_structure_file)
         return vt
-
 
     def get_or_make_helper(self,filename,make_callable):
         if _needs_update(filename):
@@ -119,6 +121,7 @@ parser=argparse.ArgumentParser()
 output_format_help=f"""The file extension determines the file type. Valid extensions are: {extensions}.
 \n  Python programmers may prefer to use the API """
 
+parser.add_argument("--config_dir",dest="config_dir",help = "store the config file and other files in this folder instead of the default.")
 parser.add_argument("-i",help = "information about where the data is stored",dest='info',action='store_true')
 parser.add_argument("-s", help = 'Store  Quandle API Key supplied with -q in config file ',dest="store_quandle_api_key",action='store_true')
 parser.add_argument("-q", help='Quandle API Key',dest='quandl_api_key')
@@ -129,10 +132,15 @@ parser.add_argument("-t",  dest="term_structure",help =
 parser.add_argument("-m",  dest="continuous",help =
     f"""output the vix continuous maturity (i.e. interpolated) futures term structure to a file. {output_format_help}""")
 
+parser.add_argument("-w",  dest="continuous_weights",help =
+    f"""output the weights of the various vix futures tenors required to interpolate vix continuous maturity futures.    {output_format_help}""")
+
 parser.add_argument("-c", dest="cash",  help=
 f"""output the vix cash term structure a file. {output_format_help}.  Some other indexes from CBOE
 will also be included.  {output_format_help} """)
 parser.add_argument("--calendar", dest="calendar",  help="settlement dates for vix futures for a given trade date")
+parser.add_argument("--start_date", dest="start_date",  help="iso format date YYYY-MM-DD, exclude any dates prior")
+parser.add_argument("--end_date", dest="end_date",  help="iso format date, YYYY-MM-DD exclude any dates after")
 
 def read_config_file():
     config_file_path=_vix_util_data_Path()/'vixutil.config'
@@ -159,12 +167,11 @@ def write_frame(frame,ofile ):
     def to_parquet(ofile):
         new_frame = settlement_tenors_to_strings_in_columns(pd.DataFrame(frame))
         new_frame.to_parquet(ofile)
-        print(f"{new_frame} cols {new_frame.columns}")
+#        print(f"{new_frame} cols {new_frame.columns}")
 
 
     functions=[frame.to_csv,frame.to_pickle,to_parquet,frame.to_excel,frame.to_html]
     extension_to_function_map=dict(zip(extensions,functions))
-    print(f"Output file {ofile}")
     suffix = pathlib.Path(ofile).suffix
     if (suffix in extension_to_function_map):
         fn = extension_to_function_map[suffix]
@@ -177,14 +184,24 @@ def main():
     global quandl_api_key
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    logging.log(logging.DEBUG,"Debug message")
-    formatter = logging.Formatter("%(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+
+
+    args=parser.parse_args()
+
+    if start_date_str := args.start_date:
+        start_date= pd.to_datetime(start_date_str)
+
+    if end_date_str := args.end_date:
+        end_date=pd.to_datetime(start_date_str)
+
+    selection = slice(start_date_str,end_date_str)
+    #this must happen before reading the configuration file.
+
+    if args.config_dir:
+        override_data_path = args.config_dir
+        set_config_path(override_data_path)
 
     read_config_file()
-    args=parser.parse_args()
 
     if(args.info):
         print(f"Data and config file are stored in {_vix_util_data_Path()}")
@@ -202,22 +219,27 @@ def main():
         print("Rebuild")
         asyncio.run(vutils.rebuild())
         print("Rebuilt")
-    vutils.get_vix_futures_constant_maturity_weights()
-    cmt=vutils.get_vix_futures_constant_maturity_term_structure()
-    cash=vutils.get_cash_vix_term_structure()
-    fts=vutils.get_vix_futures_term_structure()
 
 
     if ofile :=args.term_structure:
+        fts = vutils.get_vix_futures_term_structure()[selection]
         write_frame(fts,ofile)
 
     if ofile :=args.continuous:
+        cmt = vutils.get_vix_futures_constant_maturity_term_structure()[selection]
         write_frame(cmt,ofile)
 
     if ofile :=args.cash:
+        cash = vutils.get_cash_vix_term_structure()[selection]
         write_frame(cash,ofile)
+
     if ofile := args.calendar:
-        write_frame(vutils.get_vix_trade_and_future_settlements(), ofile)
+        calendar = vutils.get_vix_trade_and_future_settlements()[selection]
+        write_frame(calendar, ofile)
+
+    if ofile := args.continuous_weights:
+        weights = vutils.get_vix_futures_constant_maturity_weights()[selection]
+        write_frame(weights, ofile)
 
     return 0
 
