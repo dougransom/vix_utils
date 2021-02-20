@@ -136,7 +136,7 @@ def vix_constant_maturity_weights(vix_calendar):
     cols_to_copy = {"Settle 1": vix_calendar['Settlement Date'][1], "Settle 2": vix_calendar['Settlement Date'][2]}
     df_foo = pd.DataFrame(index=vix_calendar.index, data=cols_to_copy)
 
-    df_foo[rptd] = -1001  # just a nonsense number we can identify
+    df_foo[rptd] = -100001  # just a nonsense number we can identify
 
     df_foo[rptd] = df_foo[rptd].astype(int)
 
@@ -264,10 +264,15 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
     def weight(month):
         cmdf = pd.DataFrame(index=vix_term_structure.index)
 
-        weighted_close = weights_df["Front Month Weight"] * vix_term_structure['Close'][month] + \
-            weights_df["Next Month Weight"] * vix_term_structure['Close'][month + 1]
+        weighted_open, weighted_close = ( weights_df["Front Month Weight"] * vix_term_structure[colname][month] + \
+            weights_df["Next Month Weight"] * vix_term_structure[colname][month + 1] \
+            for colname in ("Open", "Close") )
+        cmdf['Open'] = weighted_open
         cmdf['Close'] = weighted_close
         cmdf['Maturity Month'] = month
+        # the notional settlement date for the interpolation between months 2-3, 3,-4 etc
+        # may not land on a trade date.
+        cmdf['Settlement Date'] = weights_df['Notional Settlement Date']+ pd.DateOffset(months=month-1)
         return cmdf
 
     weighted_frames = (weight(month) for month in range(1, 8))

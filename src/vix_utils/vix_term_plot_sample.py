@@ -49,6 +49,7 @@ futures_term_structure[['Close']].plot()
 #            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
 plt.show()
 constant_maturity_term_structure[['Close']].plot()
+print(f"Constant maturity term structure {constant_maturity_term_structure}")
 plt.show()
 
 print(f"Cash vix {cash_vix}")
