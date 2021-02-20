@@ -9,3 +9,4 @@
 /*.code-workspace
 /dist
 /test_output
+/docs/_build
