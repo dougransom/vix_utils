@@ -171,9 +171,9 @@ def vix_constant_maturity_weights(vix_calendar):
         # in trade days.
         trade_date = row[ttr]
         try:
-            roll_period_trade_days = row[rptd]  # trade_days_to_settle[trade_date]
+            row_roll_period_trade_days = row[rptd]  # trade_days_to_settle[trade_date]
             trade_date_loc = trade_days_to_settle.index.get_loc(trade_date)
-            trade_date_loc_end_of_roll = trade_date_loc + roll_period_trade_days
+            trade_date_loc_end_of_roll = trade_date_loc + row_roll_period_trade_days
             trade_date_loc_end_of_roll_capped = pd.nan if trade_date_loc_end_of_roll > ll else \
                 trade_date_loc_end_of_roll
             trade_date_end_of_roll = df_foo.iloc[trade_date_loc_end_of_roll_capped].at[ttr]
@@ -224,8 +224,6 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
         for s in settle_columns:
             df[s] = np.nan
 
-        settlement_date = df['Settlement Date']
-
         def add_settle_date_and_trade_days_to_settlement(row):
             ix = row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
@@ -240,7 +238,7 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
         df.drop('tds', axis=1)
         for s in settle_columns:
             df[s] = pd.to_datetime(df[s])
-        df['Days to Settlement'] = ((df['Settlement Date'] - df.index).dt.days).astype(np.int16)
+        df['Days to Settlement'] = (df['Settlement Date'] - df.index).dt.days.astype(np.int16)
         return df
 
     months = tuple(range(1, 1 + number_of_futures_maturities))
