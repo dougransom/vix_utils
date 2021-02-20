@@ -15,22 +15,9 @@ pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
 
+logger=logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
-handler = logging.StreamHandler()
-handler.setLevel(logging.INFO)
-formatter = logging.Formatter("%(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-
-logging.log(logging.DEBUG,"Debug message")
-logging.log(logging.INFO, "Info message")
-logging.info("Info Message 2")
-logging.warning("warning message")
-logging.error("error message")
-logging.critical("Critical Message")
-
-logging.warning(
-    """Warning:  matplotlib.pyplot and scipy.stats are required to run this script.  They are not prerequisites of"""
-    """ this package, so you may have to install them into your environment""")
 
 
 
@@ -63,20 +50,12 @@ futures_term_structure[['Close']].plot()
 plt.show()
 constant_maturity_term_structure[['Close']].plot()
 plt.show()
-#            print(f"cash vix\n{cash_vix}")
-#            a=ft2[['VIX1M_SPVIXSTR']]
-b=cash_vix['Close'][['RVOL', 'VIX']]
-b['VIX1M_SPVIXSTR']=a['VIX1M_SPVIXSTR']
 
-b.sort_index()
-c=b['RVOL']-b['VIX1M_SPVIXSTR']
-#            plt.show()
-print(f"A\n{a} \nB\n{b}___\n")
-
-c.plot()
+print(f"Cash vix {cash_vix}")
+b=cash_vix['Close'][['VIX3M','VIX','VIX9D']]
+b.plot()
 plt.show()
 
-
-
+print(f"{b}")
 
 

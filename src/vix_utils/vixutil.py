@@ -14,16 +14,17 @@ from vix_utils.futures_utils import timeit
 quandl_api_key=f"This is not a valid quandle key {__file__}"
 from pathlib import Path
 
-override_data_path=False
+_override_data_path=False
 
-
+def _set_config_path(str_path):
+    _override_data_path=str_path
 
 def _vix_util_data_Path():
     """
     :return: the path where VIX term structure and calendar data are stored.
     """
-    if override_data_path:
-        return Path(overide_data_path)
+    if _override_data_path:
+        return Path(_override_data_path)
     user_path=Path.home()
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
@@ -133,7 +134,8 @@ parser.add_argument("-m",  dest="continuous",help =
     f"""output the vix continuous maturity (i.e. interpolated) futures term structure to a file. {output_format_help}""")
 
 parser.add_argument("-w",  dest="continuous_weights",help =
-    f"""output the weights of the various vix futures tenors required to interpolate vix continuous maturity futures.    {output_format_help}""")
+    f"""output the weights of the various vix futures tenors required to interpolate vix continuous maturity futures.   
+    Note the weights are as of the beginning of the trading day.  {output_format_help}""")
 
 parser.add_argument("-c", dest="cash",  help=
 f"""output the vix cash term structure a file. {output_format_help}.  Some other indexes from CBOE
@@ -183,7 +185,7 @@ def write_frame(frame,ofile ):
 def main():
     global quandl_api_key
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
 
     args=parser.parse_args()
@@ -198,8 +200,8 @@ def main():
     #this must happen before reading the configuration file.
 
     if args.config_dir:
-        override_data_path = args.config_dir
-        set_config_path(override_data_path)
+        o_data_path = args.config_dir
+        _set_config_path(o_data_path)
 
     read_config_file()
 
@@ -216,9 +218,9 @@ def main():
 
     vutils = VixUtilsApi()
     if args.rebuild:
-        print("Rebuild")
-        asyncio.run(vutils.rebuild())
-        print("Rebuilt")
+        print("Rebuilding data files from Quandle and CBOE")
+        timeit(logging.INFO)(asyncio.run)(vutils.rebuild())
+        print("Rebuilt Files")
 
 
     if ofile :=args.term_structure:
