@@ -4,7 +4,6 @@ vixutil -i  -m continuous.pkl -t term.pkl -c cash.pkl --calendar calendar.pkl -w
 
 vixutil -i  -m continuous.csv -t term.csv -c cash.csv --calendar calendar.csv -w continuous_weights.csv
 
-vixutil -i  -m continuous.parquet -t term.parquet -c cash.parquet --calendar calendar.parquet -w  continuous_weights.parquet
 
 vixutil -i  -m continuous.html -t term.html -c cash.html --calendar calendar.html -w continuous_weights.html
 

@@ -16,7 +16,7 @@ pd.set_option('display.max_colwidth', None)
 
 
 logger=logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 

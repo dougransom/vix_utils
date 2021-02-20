@@ -122,7 +122,7 @@ class VixUtilsApi:
         return self.get_or_make_helper(f, _make_vix_futures_constant_maturity_term_structure)
 
 
-extensions = [".csv", ".pkl", ".parquet", ".xlsx", ".html"]  # supported output file types
+extensions = [".csv", ".pkl",  ".xlsx", ".html"]  # supported output file types
 
 parser = argparse.ArgumentParser()
 output_format_help = f"""The file extension determines the file type. Valid extensions are: {extensions}.
@@ -178,18 +178,9 @@ def write_config_file():
         cp.write(configfile)
 
 
-def write_frame(frame, ofile):
-    def settlement_tenors_to_strings_in_columns(d_frame):
-        d_frame.columns = list(f"{a}_M_{b}" for (a, b) in d_frame.columns)
-        return d_frame
+def write_frame_ex(frame, ofile, functions):
 
-    def to_parquet(o_pfile):
-        new_frame = settlement_tenors_to_strings_in_columns(pd.DataFrame(frame))
-        new_frame.to_parquet(o_pfile)
 
-    #        print(f"{new_frame} cols {new_frame.columns}")
-
-    functions = [frame.to_csv, frame.to_pickle, to_parquet, frame.to_excel, frame.to_html]
     extension_to_function_map = dict(zip(extensions, functions))
     suffix = pathlib.Path(ofile).suffix
     if suffix in extension_to_function_map:
@@ -197,6 +188,14 @@ def write_frame(frame, ofile):
         fn(ofile)
     else:
         print(f"Unsupported extension, only {extensions} are supported")
+
+
+def write_frame(frame,ofile):
+    functions = [frame.to_csv, frame.to_pickle,  frame.to_excel, frame.to_html]
+    return write_frame_ex(frame,ofile,functions)
+
+
+
 
 
 def main():
