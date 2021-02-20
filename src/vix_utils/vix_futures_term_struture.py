@@ -277,8 +277,16 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
 
     weighted_frames = (weight(month) for month in range(1, 8))
     merged_df = pd.concat(weighted_frames)
-    return merged_df.reset_index().pivot(columns="Maturity Month", index="Trade Date")
+    pivoted = merged_df.reset_index().pivot(columns="Maturity Month", index="Trade Date")
 
+    # keep only the rows where the front month interpolated close is not null
+
+    p_filter = pivoted["Close"][1].notnull()
+    return pivoted[p_filter]
+
+
+
+    return pivoted
 
 def download_quandle_data(quandl_api_key, data_path, number_of_futures_maturities=9):
     """
