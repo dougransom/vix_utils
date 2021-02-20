@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "vix_utils"
+author = "Doug Ransom"
+author-email = "doug.ransom@gmail.com"
+home-page = "http://github.com/vix_utils"
+classifiers = ["License :: OSI Approved :: MIT License",
+	"Development Status :: 3 - Alpha",
+	"Intended Audience :: Financial and Insurance Industry",
+	"Topic :: Office/Business :: Financial :: Investment"]
+
+description-file="README.md"
+
+requires = [
+    "flit >=3.0",
+    "pandas",
+    "pandas-market-calendars",
+    "Quandl",
+    "aiofiles",
+    "aiohttp",
+    "matplotlib",
+    "scipy",
+    "openpyxl",
+    "pyarrow"]
+
+
+keywords="vix,volatility,pandas,vix term structure,cboe,quandl"
+[tool.flit.scripts]
+vixutil = "vix_utils.vixutil:main"
