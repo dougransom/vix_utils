@@ -110,6 +110,8 @@ def vix_constant_maturity_weights(vix_calendar):
 
     You can read more at https://sixfigureinvesting.com/2015/01/how-does-vxx-daily-roll-work/.
 
+    https://www.ipathetn.com/US/16/en/details.app?instrumentId=341408 for VXX information.
+
     Here is roughly how it works.
 
     dt=number of business days in the current roll period
@@ -128,7 +130,7 @@ def vix_constant_maturity_weights(vix_calendar):
     #create a map from settlement dates to the previous settlement dates
     #this is done by looking at month 2 settlment dates, and finding the month 1 settlement date
 
-    srfm="Start Roll Front Month"
+    start_roll_front_month= "Start Roll Front Month"
     sd="Settlement Date"
     rptd="Roll Period Trade Days"
     rpcd="Roll Period Calendar Days"
@@ -143,17 +145,17 @@ def vix_constant_maturity_weights(vix_calendar):
 
     #add the start of roll date for front month
 
-    df_foo[srfm]=np.nan
+    df_foo[start_roll_front_month]=np.nan
     for ix in month_to_prior_month_settlement_map.index:
         start_roll = month_to_prior_month_settlement_map[ix]
         selected = vix_calendar[sd][1]==ix
-        df_foo.loc[selected,srfm]=start_roll
-        roll_period_trade_days = cfe_exchange_open_days(start_roll,ix)
+        df_foo.loc[selected, start_roll_front_month]=start_roll
+        roll_period_trade_days = cfe_exchange_open_days(start_roll,ix)-1
         df_foo.loc[selected,rptd]= roll_period_trade_days
 
 
-    df_foo[srfm]=pd.to_datetime(df_foo[srfm])
-    df_foo[rpcd]=vix_calendar[sd][1]-df_foo[srfm]
+    df_foo[start_roll_front_month]=pd.to_datetime(df_foo[start_roll_front_month])
+    df_foo[rpcd]=vix_calendar[sd][1]-df_foo[start_roll_front_month]
     cdts="Days to Settlement"
     tdts="Trade Days to Settlement"
 
@@ -229,7 +231,7 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
             ix=row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
             sd = vix_futures_settlement_date_from_trade_date(year, month, day, maturity)
-            tds = cfe_exchange_open_days(ix, sd)
+            tds = cfe_exchange_open_days(ix, sd)-1
             return (sd,tds)
         df['tds']=df.index.to_series()  #need the index as values in the applied function
         new_cols=df.apply(add_settle_date_and_trade_days_to_settlement,axis=1,result_type='expand')
