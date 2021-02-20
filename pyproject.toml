@@ -23,8 +23,7 @@ requires = [
     "aiohttp",
     "matplotlib",
     "scipy",
-    "openpyxl",
-    "pyarrow"]
+    "openpyxl"]
 
 
 keywords="vix,volatility,pandas,vix term structure,cboe,quandl"
