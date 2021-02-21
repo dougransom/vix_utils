@@ -32,7 +32,6 @@ cash_vix = vutils.get_cash_vix_term_structure()
 futures_term_structure = vutils.get_vix_futures_term_structure()
 wide_vix_calendar=vutils.get_vix_futures_constant_maturity_weights()
 
-
 sep_lines = "_"*25+"\n"
 
 

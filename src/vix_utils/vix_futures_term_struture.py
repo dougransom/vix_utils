@@ -318,10 +318,11 @@ def vix_futures_term_structure(data_path, wide_settlement_calendar, number_of_fu
         for col in _quandl_vix_cols_to_clean:
             mask = df[col]==0
             ii = df[mask].index
-            logging.log(logging.INFO,f"Cleaning month {maturity} col {col} dates {ii}")
-
+            if ii.size > 0:
+                logging.log(logging.INFO,f"Cleaning zeros: month {maturity} col {col} dates {ii}")
             df.loc[mask,col]=df.loc[mask,"Settle"]
         return df
+
 
     months = tuple(range(1, 1 + number_of_futures_maturities))
     # the file namaes
