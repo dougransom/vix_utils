@@ -70,7 +70,6 @@ s1 = futures_term_structure.loc[day_of_interest][["Close", "Settlement Date"]]
 s2 = constant_maturity_term_structure.loc[day_of_interest][["Close", "Settlement Date"]]
 
 s1.index = pd.Index([ (a,f"{b}") for a,b in s1.index])
-s2.index = pd.Index([ (a,f"M{b}{b+1}") for a,b in s2.index])
 s3=pd.concat([s1,s2])
 one_day_ts = pd.DataFrame(s3).unstack(0)
 iii=one_day_ts.columns.droplevel(0)

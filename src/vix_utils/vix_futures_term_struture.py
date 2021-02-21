@@ -282,6 +282,9 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
     # keep only the rows where the front month interpolated close is not null
 
     p_filter = pivoted["Close"][1].notnull()
+    # n ame the columns by the two months they are comprised of
+    pivoted.columns = pd.Index([(a, f"M{b}{b + 1}") for a, b in pivoted.columns])
+
     return pivoted[p_filter]
 
 
