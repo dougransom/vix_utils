@@ -16,8 +16,6 @@ The output can be saved in a variety of formats that can be imported into common
 
 * .csv (comma seperated values)
 * .pkl  (python pickle format)
-* .parquet (parquet format)
-*  .hdf
 *  .xlsx (excel)
 *  .json  
 *  .html
@@ -51,21 +49,26 @@ data you would like.
 
 
 
-##Installation
+## Installation
 
 You will need a Python 3.9 or later instalation.
 
-### Install from the Python Packaging Iindex
-Install using pip from [The Python Package Index ](https://www.pypi.org):
+### Install from the Python Packaging Index
+From an elevated command prompt, 
+install using pip from [The Python Package Index ](https://www.pypi.org):
 
 `pip install vix_utils"
 
 ### Installing after cloning the Git Repository
 
+From an elevated command prompt,
 `flit install --symlink` will create the command line program in your python Scripts directory and symlink the 
 appropriate files in SitePackages to your repository.
 
+## Example
 
+An example Python program to use the API to plot the 
+term structure is in example_plot_vix_term_structure.py
 
 
 

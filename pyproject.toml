@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 module = "vix_utils"
 author = "Doug Ransom"
 author-email = "doug.ransom@gmail.com"
-home-page = "http://github.com/vix_utils"
+home-page = "https://github.com/dougransom/vix_utils"
 classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",

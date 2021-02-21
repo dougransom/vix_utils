@@ -1,3 +1,9 @@
+"""
+This module provides both the command line program and a Python interface to provide
+the VIX futures term structure, the VIX continuous maturity
+term structure, and the VIX cash term structure.
+
+"""
 import argparse
 import vix_utils.vix_futures_term_struture as v
 import vix_utils.vix_cash_term_structure as cash

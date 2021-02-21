@@ -1,3 +1,7 @@
+"""
+Example use of vixutil to plot the term structure.
+Be sure to run vixutil -r first to download the data.
+"""
 import vixutil as vutil
 
 import pandas as pd
