@@ -275,7 +275,7 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
         cmdf['Settlement Date'] = weights_df['Notional Settlement Date']+ pd.DateOffset(months=month-1)
         return cmdf
 
-    weighted_frames = (weight(month) for month in range(1, 7))
+    weighted_frames = (weight(month) for month in range(1, 9))
     merged_df = pd.concat(weighted_frames)
     pivoted = merged_df.reset_index().pivot(columns="Maturity Month", index="Trade Date")
 
@@ -307,7 +307,7 @@ def download_quandle_data(quandl_api_key, data_path, number_of_futures_maturitie
 
 _quandl_vix_cols_to_clean=["Open", "High", "Low", "Close", "Settle"]
 
-def vix_futures_term_structure(data_path, wide_settlement_calendar, number_of_futures_maturities=7):
+def vix_futures_term_structure(data_path, wide_settlement_calendar, number_of_futures_maturities=9):
     """Load the futures data previously downloaded from quandl for the month 1,...number_of_futures_maturities.
     Joint to the wide settlement calendar from vix_futures_trade_dates_and_settlement_dates
     """

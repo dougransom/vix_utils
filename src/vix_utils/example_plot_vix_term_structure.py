@@ -48,7 +48,7 @@ except Exception as e:
     sys.exit(-3)
 # the nine month has some bad data in it
 #futures_term_structure = futures_term_structure.swaplevel(0,1,axis=1).drop(columns=[9]).swaplevel(0, 1, axis=1)
-futures_term_structure.drop(level=1,columns=[9,8],inplace=True)
+#futures_term_structure.drop(level=1,columns=[9,8],inplace=True)
 futures_term_structure[['Close']].plot()
 
 #            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
