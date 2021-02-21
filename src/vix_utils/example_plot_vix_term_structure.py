@@ -32,7 +32,6 @@ cash_vix = vutils.get_cash_vix_term_structure()
 futures_term_structure = vutils.get_vix_futures_term_structure()
 wide_vix_calendar=vutils.get_vix_futures_constant_maturity_weights()
 
-
 sep_lines = "_"*25+"\n"
 
 
@@ -49,7 +48,7 @@ except Exception as e:
     sys.exit(-3)
 # the nine month has some bad data in it
 #futures_term_structure = futures_term_structure.swaplevel(0,1,axis=1).drop(columns=[9]).swaplevel(0, 1, axis=1)
-futures_term_structure.drop(level=1,columns=[9,8],inplace=True)
+#futures_term_structure.drop(level=1,columns=[9,8],inplace=True)
 futures_term_structure[['Close']].plot()
 
 #            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
@@ -70,7 +69,6 @@ s1 = futures_term_structure.loc[day_of_interest][["Close", "Settlement Date"]]
 s2 = constant_maturity_term_structure.loc[day_of_interest][["Close", "Settlement Date"]]
 
 s1.index = pd.Index([ (a,f"{b}") for a,b in s1.index])
-s2.index = pd.Index([ (a,f"M{b}{b+1}") for a,b in s2.index])
 s3=pd.concat([s1,s2])
 one_day_ts = pd.DataFrame(s3).unstack(0)
 iii=one_day_ts.columns.droplevel(0)
