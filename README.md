@@ -17,7 +17,6 @@ The output can be saved in a variety of formats that can be imported into common
 * .csv (comma seperated values)
 * .pkl  (python pickle format)
 *  .xlsx (excel)
-*  .json  
 *  .html
 
 If Python is your language of choice, there is also an API available that can load the data into
