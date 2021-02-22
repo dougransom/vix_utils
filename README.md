@@ -27,7 +27,7 @@ Pandas dataframes.
 This will download the data from CBOE and Quandl, and save the futures and cash term structures as 
 Microsoft Excel Files.
 
-`vixutils -r -t futures_term_structure.xlsx -c cash_term_structure.json `
+`vixutils -r -t futures_term_structure.xlsx -c cash_term_structure.xlsx `
  
 For a detailed command line arguments, run 
 
