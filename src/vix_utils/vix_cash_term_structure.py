@@ -94,7 +94,7 @@ async def get_vix_index_histories(data_directory):
     simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
 
     index_history_urls = [_vix_index_history, _vvx_history, _vix9d_history, _vix3m_history, _vix6m_history,
-                          _gvz_history]
+                          _gvz_history] + simple_data_urls
     index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M", "GVZ"] + simple_data_symbols
 
     # various files from CBO have lines above the CSV data that need to be tossed.
