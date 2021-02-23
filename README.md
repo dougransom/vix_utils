@@ -69,5 +69,8 @@ appropriate files in SitePackages to your repository.
 An example Python program to use the API to plot the 
 term structure is in example_plot_vix_term_structure.py
 
+Here is a sample plot:
+![Sample Term Structure](./sample_term_structure.png "A sample term structure").
+
 
 
