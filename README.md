@@ -53,15 +53,15 @@ data you would like.
 You will need a Python 3.9 or later instalation.
 
 ### Install from the Python Packaging Index
-From an elevated command prompt, 
-install using pip from [The Python Package Index ](https://www.pypi.org):
+ 
+Install using pip from [The Python Package Index ](https://www.pypi.org):
 
-`pip install vix_utils"
+`pip install vix_utils`
 
 ### Installing after cloning the Git Repository
 
-From an elevated command prompt,
-`flit install --symlink` will create the command line program in your python Scripts directory and symlink the 
+ 
+`pip install -e .[dev,test]` will create the command line program in your python Scripts directory and symlink the 
 appropriate files in SitePackages to your repository.
 
 ## Example

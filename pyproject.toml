@@ -3,6 +3,7 @@ requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
+keywords=["vix","volatility","pandas","vix term structure","cboe"]
 name = "vix_utils"
 authors = [{name="Doug Ransom",email = "doug@ransom.vip"}]
 description="Provide VIX Cash and Futures Term Structure as Pandas dataframes"
@@ -24,7 +25,8 @@ dependencies= [
     "appdirs"]
 
 
-keywords=["vix","volatility","pandas","vix term structure","cboe"]
+[project.optional-dependencies]
+
 [project.scripts]
 vixutil = "vix_utils.vixutil:main"
 [project.urls]
