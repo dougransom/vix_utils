@@ -92,18 +92,11 @@ async def get_vix_index_histories(data_directory):
 #    simple_data_urls = [_stu(sym) for sym in simple_data_symbols]
 #    simple_data_lines_to_discard = [1]*len(simple_data_urls)
  #   simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
-
-    index_history_urls = [_vix_index_history, _vvx_history, _vix9d_history, _vix3m_history, _vix6m_history,
-                          _gvz_history]  
     index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M", "GVZ"]  
+    index_history_urls = [f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv" for symbol in index_history_symbols]
 
-    # various files from CBO have lines above the CSV data that need to be tossed.
-    num_lines_to_discard = [1, 1, 3, 2, 2, 1]  
-    # the function to fixup the columns is passed in to the function that builds the data frame
-    fixups = [fix_vix_columns, fix_vvix_columns, fix_vix9d_columns, fix_vix3m_columns,
-              fix_vix_6m_columns, fix_one_value_column_result]   
 
-    z = list(zip(index_history_urls, index_history_symbols, num_lines_to_discard, fixups))
+
 
     def add_symbol_and_set_index(frame, symbol):
         """
@@ -140,10 +133,7 @@ async def get_vix_index_histories(data_directory):
                 await f.write(text)
             logging.debug(f"Wrote {cache_file_path}")
 
-#            input_stream = io.StringIO(text)
-#            print(f"{cache_file_name}:  {text[0:500]}")
-#            frame = pd.read_csv(input_stream, header=lines_to_discard)
-#            print(f"{cache_file_name} frame: \n{frame}")
+
 #
             return ""
         # frames with the columns fixed
