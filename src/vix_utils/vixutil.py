@@ -5,6 +5,7 @@ term structure, and the VIX cash term structure.
 
 """
 import argparse
+from appdirs import user_data_dir,user_log_dir
 import vix_utils.vix_futures_term_struture as v
 import vix_utils.vix_cash_term_structure as cash
 import pandas as pd
@@ -33,7 +34,7 @@ def _vix_util_data_path():
     """
     if _override_data_path:
         return Path(_override_data_path)
-    user_path = Path.home()
+    user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
     return vixutil_path
