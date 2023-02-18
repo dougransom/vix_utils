@@ -73,12 +73,16 @@ class VixUtilsApi:
         :return:  nothing
         """
 
-        download_quandl_coro = asyncio.to_thread(v.download_quandle_data, quandl_api_key, self.data_path)
-        ch = asyncio.create_task(cash.get_vix_index_histories(self.data_path))
-        wide_vix_calendar_coro = asyncio.to_thread(v.vix_futures_trade_dates_and_settlement_dates)
-        (cash_vix, _, wide_vix_calendar) = await asyncio.gather(ch, download_quandl_coro, wide_vix_calendar_coro)
+        #TODO Download vix futures data here
+        #download_quandl_coro = asyncio.to_thread(v.download_quandle_data, quandl_api_key, self.data_path)
 
-        wide_vix_calendar.to_pickle(self.data_path / "wide_vix_calendar.pkl")
+        
+        ch = asyncio.create_task(cash.get_vix_index_histories(self.data_path))
+#        wide_vix_calendar_coro = asyncio.to_thread(v.vix_futures_trade_dates_and_settlement_dates)
+
+        (cash_vix) = await asyncio.gather(ch)
+
+#        wide_vix_calendar.to_pickle(self.data_path / "wide_vix_calendar.pkl")
         cash_vix.to_pickle(self.data_path / _vix_cash_file)
 
     def get_cash_vix_term_structure(self):
