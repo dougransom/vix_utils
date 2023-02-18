@@ -1,5 +1,5 @@
 import pandas as pd
-import vix_utils.futures_utils as u
+
 import logging as logging
 from urllib.parse import urlparse
 import aiofiles
@@ -10,71 +10,14 @@ from itertools import chain
 
 
 
-# def _symbol_to_url(sym: str) -> str:
-#     """
-
-#     :param sym:  A symbol of a CBOE published index
-#     :return: the URL to download the index historical data from.
-
-#     Works for some of the CBOE indexes.
-#     You can find a variety of indexes using the CBOE global index search.
-#     https://ww2.cboe.com/index  and even more useful all on one page https://www.cboe.com/us/indices/indicesproducts/.
-#     """
-#     return f"https://ww2.cboe.com//publish/scheduledtask/mktdata/datahouse/{sym}_History.csv"
-
-
-# _stu = _symbol_to_url           # save some typing
 
 # use this URL to browse and find the index data
 _cboe_indexes = "https://www.cboe.com/index/indexes"
-_vix1y_dashboard = "https://www.cboe.com/index/dashboard/vix1y"
 
 
 async def get_vix_index_histories(data_directory):
 
-    # the variious fix_..columns rename columns of to be consistent with "Close" and "Trade Date"
-    # as the various data files from CBOE aren't consistent
-    def fix_vvix_columns(df):
-        df = df.rename(columns={"VVIX": "Close", "Date": "Trade Date"})
-        return df
-
-    def fix_vix9d_columns(df):
-        df = df.rename(columns={"Date": "Trade Date"})
-        # Known bad date string in the data for april 20, 2011, looks like "*4/20/2011",
-        # at least as of november 11, 2020
-        td = df["Trade Date"]
-        m = td == "*4/20/2011"
-        # creates a pandas warning warning.  so there is likely a better way
-        td.loc[m] = "4/20/2011"
-        return df
-
-    def fix_vix3m_columns(df):
-        df.columns = ["Trade Date", "Open", "High", "Low", "Close"]
-        return df
-
-    fix_vix_columns = fix_vix3m_columns  # these are the same
-    fix_vix_6m_columns = fix_vix9d_columns  # these are the same
-
-    # fix_vix1y_columns not currently used because we  haven't developed a programmatic way to retrieve VIX1Y from CBOE
-    def fix_vix1y_columns(df):
-        df = df.iloc[:, 0:6]  # get rid of the cruft bogus columns
-        # the columns in the file have whitespace.
-        df.columns = ["time", "vol", "open", "high", "low", "close"]
-        df = df[['time', 'open', 'high', 'low', 'close']]
-
-        df.columns = ["Trade Date", "Open", "High", "Low", "Close"]
-        return df
-
-    def fix_one_value_column_result(df):
-        df.columns = ['Trade Date', 'Close']
-        return df
-
-    # these symbols have  a trade date, close, and predictable URL
-#    simple_data_symbols = ["RVOL", "RVOL3M", "RVOL6M", "RVOL12M"]
-
-#    simple_data_urls = [_stu(sym) for sym in simple_data_symbols]
-#    simple_data_lines_to_discard = [1]*len(simple_data_urls)
- #   simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
+ 
     symbols_with_value_only=['VVIX','GVZ']
 
     symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
