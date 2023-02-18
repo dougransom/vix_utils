@@ -8,9 +8,6 @@ import asyncio
 import io
 from itertools import chain
 
-
-
-
 # use this URL to browse and find the index data
 _cboe_indexes = "https://www.cboe.com/index/indexes"
 
@@ -30,17 +27,6 @@ async def get_vix_index_histories(data_directory):
     index_history_files_with_value_only=index_history_files[:value_only_count]
     index_history_files_with_high_low_close=index_history_files[value_only_count:]
 
-    def add_symbol_and_set_index(frame, symbol):
-        """
-
-        :param frame: a data frame with at least a trade date column
-        :param symbol: the symbol for the data in this table
-        :return: the data frame, modified to have an index of Trade Date and a column "Symbol" with the symbol.
-        """
-        frame["Symbol"] = symbol
-        frame["Trade Date"] = pd.to_datetime(frame["Trade Date"])
-        frame.set_index("Trade Date")
-        return frame
 
     async with aiohttp.ClientSession() as session:
 
@@ -88,7 +74,7 @@ async def get_vix_index_histories(data_directory):
 
     all_vix_cash = pd.concat(frames)
     all_vix_cash['Trade Date'] = pd.to_datetime(all_vix_cash['Trade Date'])
-
+    all_vix_cash.set_index('Trade Date')
     logging.debug(f"\nAll Vix cash \n{all_vix_cash}")
     all_cash_frame = all_vix_cash.pivot(index='Trade Date', columns="Symbol")
 

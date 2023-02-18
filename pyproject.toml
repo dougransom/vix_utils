@@ -2,23 +2,20 @@
 requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "vix_utils"
-author = "Doug Ransom"
-author-email = "doug.ransom@gmail.com"
-home-page = "https://github.com/dougransom/vix_utils"
+[project]
+name = "vix_utils"
+authors = [{name="Doug Ransom",email = "doug@ransom.vip"}]
+description="Provide VIX Cash and Futures Term Structure as Pandas dataframes"
 classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",
 	"Topic :: Office/Business :: Financial :: Investment"]
+version = '0.0.0.0.5'
+readme="README.md"
 
-description-file="README.md"
-
-requires = [
-    "flit >=3.0",
+dependencies= [
     "pandas",
     "pandas-market-calendars",
-    "Quandl",
     "aiofiles",
     "aiohttp",
     "matplotlib",
@@ -27,6 +24,8 @@ requires = [
     "appdirs"]
 
 
-keywords="vix,volatility,pandas,vix term structure,cboe,quandl"
-[tool.flit.scripts]
+keywords=["vix","volatility","pandas","vix term structure","cboe"]
+[project.scripts]
 vixutil = "vix_utils.vixutil:main"
+[project.urls]
+home-page = "https://github.com/dougransom/vix_utils"
