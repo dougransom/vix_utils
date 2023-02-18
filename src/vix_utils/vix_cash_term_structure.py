@@ -14,14 +14,17 @@ _cboe_indexes = "https://www.cboe.com/index/indexes"
 
 async def get_vix_index_histories(data_directory):
 
- 
+    cash_data_directory=data_directory/"cash"
+    download_data_directory=cash_data_directory/"download"
+    del data_directory        
+    download_data_directory.mkdir(parents=True,exist_ok=True)
     symbols_with_value_only=['VVIX','GVZ']
 
     symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
     index_history_symbols = symbols_with_value_only + symbols_with_high_low_close  
     index_history_urls = [f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv" for symbol in index_history_symbols]
 
-    index_history_files= [data_directory/f"{symbol}_History.csv" for symbol in index_history_symbols]
+    index_history_files= [download_data_directory/f"{symbol}_History.csv" for symbol in index_history_symbols]
     value_only_count=len(symbols_with_value_only)
 
     index_history_files_with_value_only=index_history_files[:value_only_count]
@@ -43,7 +46,8 @@ async def get_vix_index_histories(data_directory):
 
             async with session.get(url) as resp:
                 text = await resp.text()
-            cache_file_path=data_directory/cache_file_name
+            cache_file_path=download_data_directory/cache_file_name
+
             logging.debug(f"\nWriting file   {cache_file_path} ")   
             
             async with aiofiles.open(cache_file_path, mode='w', newline='') as f:
@@ -55,8 +59,8 @@ async def get_vix_index_histories(data_directory):
                 
         # download all of them
         logging.debug(f"Skipping read from web")
-#        download_coro = (download_csv_from_web(url) for url in index_history_urls)
-#        l = await asyncio.gather(*download_coro)
+        download_coro = (download_csv_from_web(url) for url in index_history_urls)
+        l = await asyncio.gather(*download_coro)
 
 
     def read_index_csv(fname,col_names,symbol):
