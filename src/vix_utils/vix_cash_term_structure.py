@@ -6,25 +6,8 @@ import aiofiles
 import aiohttp
 import asyncio
 import io
+from itertools import chain
 
-#https://www.cboe.com/tradable_products/vix/vix_historical_data/
-_vix_index_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
-_vvx_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"
-_vix9d_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"
-_vix3m_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX3M_History.csv"
-_vix6m_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX6M_History.csv"
-# this is kind of a fragile way to get it, but no data published as above
-
-_gvz_history = "https://cdn.cboe.com/api/global/us_indices/daily_prices/GVZ_History.csv"
-
-# todo add symbols OVX,VSLV,VXGDX,VXXLE,VXN
-
-# and VOLI/VOLQ
-
-
-# in theory but the web server won't provide the data to the python code.  More sophisticated
-# scraping required.  so not used.
-# _vix1y_history = "https://www.cboe.com/chart/GetDownloadData/?RequestSymbol=VIX1Y"
 
 
 # def _symbol_to_url(sym: str) -> str:
@@ -92,11 +75,17 @@ async def get_vix_index_histories(data_directory):
 #    simple_data_urls = [_stu(sym) for sym in simple_data_symbols]
 #    simple_data_lines_to_discard = [1]*len(simple_data_urls)
  #   simple_data_fixups = [fix_one_value_column_result]*len(simple_data_urls)
-    index_history_symbols = ['VIX', 'VVIX', 'VIX9D', "VIX3M", "VIX6M", "GVZ"]  
+    symbols_with_value_only=['VVIX','GVZ']
+
+    symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
+    index_history_symbols = symbols_with_value_only + symbols_with_high_low_close  
     index_history_urls = [f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv" for symbol in index_history_symbols]
 
+    index_history_files= [data_directory/f"{symbol}_History.csv" for symbol in index_history_symbols]
+    value_only_count=len(symbols_with_value_only)
 
-
+    index_history_files_with_value_only=index_history_files[:value_only_count]
+    index_history_files_with_high_low_close=index_history_files[value_only_count:]
 
     def add_symbol_and_set_index(frame, symbol):
         """
@@ -112,13 +101,12 @@ async def get_vix_index_histories(data_directory):
 
     async with aiohttp.ClientSession() as session:
 
-        async def read_csv_from_web(url):
+        async def download_csv_from_web(url):
             """
 
-            :param url:
-            :param lines_to_discard:
-            :return: a data from from reading the data at url, discarding lines_to_discard lines
-            before parsing the CSV into a DataFrame.  The CSV file is also saved.
+ 
+            :return: returns nothin when the data have been downloaded into local storage.
+   
             """
             logging.debug(f"\nReading URL {url}")
             # save the csv files for inspection.
@@ -133,16 +121,25 @@ async def get_vix_index_histories(data_directory):
                 await f.write(text)
             logging.debug(f"Wrote {cache_file_path}")
 
+            return
+        
+                
+        # download all of them
+        logging.debug(f"Skipping read from web")
+#        download_coro = (download_csv_from_web(url) for url in index_history_urls)
+#        l = await asyncio.gather(*download_coro)
 
-#
-            return ""
-        # frames with the columns fixed
-        download_coro = (read_csv_from_web(url) for url in index_history_urls)
-        l = await asyncio.gather(*download_coro)
 
-        # fix up the columns (renaming them to be consistent, add the symbols as a column)
-#        frames_z = list(zip(frames_unfixed,  index_history_symbols, fixups))
-#        frames = list(add_symbol_and_set_index(f(t_frame), sym) for (t_frame, sym, f) in frames_z)
+
+    frames1=[pd.read_csv(fname,header=0,names=["Trade Date","Close"]).assign(Symbol=sym)  for 
+        fname,sym in zip(index_history_files_with_value_only,symbols_with_value_only)]
+         
+    frames2=[pd.read_csv(fname,header=0,names=['Trade Date','Open','High','Low','Close']).assign(Symbol=sym) for  
+       fname,sym in zip(index_history_files_with_high_low_close,symbols_with_high_low_close) ]
+    
+
+    frames=chain(frames1,frames2)
+ 
 
     all_vix_cash = pd.concat(frames)
     all_vix_cash['Trade Date'] = pd.to_datetime(all_vix_cash['Trade Date'])
