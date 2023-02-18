@@ -131,11 +131,11 @@ async def get_vix_index_histories(data_directory):
 
 
 
-    frames1=[pd.read_csv(fname,header=0,names=["Trade Date","Close"]).assign(Symbol=sym)  for 
-        fname,sym in zip(index_history_files_with_value_only,symbols_with_value_only)]
+    frames1=(pd.read_csv(fname,header=0,names=["Trade Date","Close"]).assign(Symbol=sym)  for 
+        fname,sym in zip(index_history_files_with_value_only,symbols_with_value_only))
          
-    frames2=[pd.read_csv(fname,header=0,names=['Trade Date','Open','High','Low','Close']).assign(Symbol=sym) for  
-       fname,sym in zip(index_history_files_with_high_low_close,symbols_with_high_low_close) ]
+    frames2=(pd.read_csv(fname,header=0,names=['Trade Date','Open','High','Low','Close']).assign(Symbol=sym) for  
+       fname,sym in zip(index_history_files_with_high_low_close,symbols_with_high_low_close) )
     
 
     frames=chain(frames1,frames2)
