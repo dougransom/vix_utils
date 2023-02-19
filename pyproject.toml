@@ -13,12 +13,12 @@ classifiers = ["License :: OSI Approved :: MIT License",
 	"Topic :: Office/Business :: Financial :: Investment"]
 version = '0.0.0.0.5'
 readme="README.md"
-
+requires-python=">=3.11"
 dependencies= [
     "pandas",
     "pandas-market-calendars",
     "aiofiles",
-    "aiohttp",
+    "aiohttp[speedups]",
     "matplotlib",
     "scipy",
     "openpyxl",
