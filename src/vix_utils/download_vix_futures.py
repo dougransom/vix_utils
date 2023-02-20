@@ -80,16 +80,16 @@ def years_and_weeks():
 def generate_settlement_url(date_str):
     return  f"https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_{date_str}.csv"
 
-def generate_monthly_url(year,month):
+def generate_monthly_url_date(year,month):
     settlement_date=vix_futures_settlement_date_monthly(year,month)
     settlement_date_str=settlement_date.isoformat()[:10]
     url=generate_settlement_url(settlement_date_str)    
     return url,settlement_date_str
 
-def generate_monthly_urls():
-     return (generate_monthly_url(y,m) for y,m in years_and_months)
+def generate_monthly_url_dates():
+     return (generate_monthly_url_date(y,m) for y,m in years_and_months)
 
-def generate_weekly_url(year,week):
+def generate_weekly_url_date(year,week):
     
     settlement_date=cboe_futures_dates.vix_settlement_date_weekly(year,week)
     settlement_date_str=settlement_date.isoformat()[:10]
@@ -118,12 +118,12 @@ class VXFuturesDownloader:
             p.mkdir(exist_ok=True,parents=True) 
  
     async def download_one_monthly_future(self,year,month):
-        url,expiry=generate_monthly_url(year,month)
+        url,expiry=generate_monthly_url_date(year,month)
         save_path=self.futures_data_cache_monthly
         return await self.download_one_future(save_path,url,expiry)
     
     async def download_one_weekly_future(self,year,week):
-        url,expiry=generate_weekly_url(year,week)
+        url,expiry=generate_weekly_url_date(year,week)
         save_path=self.futures_data_cache_weekly
         return await self.download_one_future(save_path,url,expiry)
     
