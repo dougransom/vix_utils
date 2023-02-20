@@ -14,6 +14,8 @@ import pandas as pd
 
 class CBOFuturesDates:
     def __init__(self):
+
+        #move this to global, already duplicated in main
         self.cfe_mcal =  mcal.get_calendar('CFE')
         #valid_days is expensive, so do it once here
         now=dt.datetime.now()
@@ -201,25 +203,46 @@ def read_csv_future_files(vixutil_path):
             week_number=week_number_from_fn(fn)
             monthly=settlement_date_str in monthly_settlement_date_strings
             df['Frequency']="Monthly" if monthly else "Weekly"
-            df['Week Number']=week_number
+            df['WeekOfYear']=week_number
             df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str)
             df['Year']=settlement_date.year
             if monthly:
-                df['Month Number']=settlement_date.month
+                df['MonthOfYear']=settlement_date.month
 
             df['file']=fn           #just to help debugging
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+            trade_dates = df['Trade Date']
+            trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
+            settlement_date_local = pd.to_datetime(settlement_date).tz_localize('US/Eastern')
+            for index, trade_date in trade_dates.items():
+                trade_date_local= pd.to_datetime(trade_date).tz_localize('US/Eastern')
+                exchange_open_days = valid_days.loc[trade_date_local:settlement_date_local]
+                trade_days_to_settlement.loc[index]=len(exchange_open_days)
 
+            df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
             return df
 
        
         print("\nwarning trunced")
-        for p in wfns[0:3]:
-           df=read_csv_future_file(p)
-           print(f"df\n{df}")
+        contract_history_frames=(read_csv_future_file(p) for  p in wfns[0:30])
+        futures_frame=pd.concat(contract_history_frames)
+        
+        print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
+        return futures_frame
 
 
 async def main():
+    global cfe_mcal, valid_days
+    cfe_mcal =  mcal.get_calendar('CFE')
+    #valid_days is expensive, so do it once here
+    now=dt.datetime.now()
+    #get info for futures expiring up to January 1 in six years.
+    #no futures currently trade that far out so this should be fine
+    five_years_away=dt.datetime(now.year+6,1,1)
+
+    valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
+
+
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
