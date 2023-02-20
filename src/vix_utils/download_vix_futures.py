@@ -6,6 +6,7 @@ from pathlib import Path
 import itertools
 import vix_futures_term_struture as t
 import datetime as dt
+import numpy as np
 
 import pandas_market_calendars as mcal
 import calendar as cal
@@ -194,17 +195,21 @@ def read_csv_future_files(vixutil_path):
         wfns,mfns=downloaded_file_paths(vixutil_path)
         monthly_settlement_date_strings=monthly_settlements(mfns)
         def read_csv_future_file(future_path):
-            df = pd.read_csv(future_path)
+            df = pd.read_csv(future_path,parse_dates=[0])
             fn=future_path.name
             settlement_date_str=settlement_date_str_from_fn(fn)
             week_number=week_number_from_fn(fn)
             monthly=settlement_date_str in monthly_settlement_date_strings
             df['Frequency']="Monthly" if monthly else "Weekly"
             df['Week Number']=week_number
+            df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str)
+            df['Year']=settlement_date.year
             if monthly:
-                df['Month Number']=0  #todo
-            df['Settlement Date']=pd.to_datetime(settlement_date_str)
-            df['file']=fn           #just to helpe debugging
+                df['Month Number']=settlement_date.month
+
+            df['file']=fn           #just to help debugging
+            df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+
             return df
 
        
