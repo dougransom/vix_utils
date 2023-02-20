@@ -6,7 +6,7 @@
 It provides a command line program that:
 
 * generates a mapping of trade dates to the next settlement date for each vix future maturity.
-* downloads the VIX Futures Data from [Quandl](https://www.quandl.com/) and puts
+* downloads the VIX Futures Data from [CBOE](https://www.cboe.com/us/futures/market_statistics/historical_data/) and puts
 all the maturities in a row for a given trade date.  
 * downloads the cash  Vix Term Structure and produces a table indexed by trade date.
 other CBOE index are included.
@@ -50,7 +50,7 @@ data you would like.
 
 ## Installation
 
-You will need a Python 3.9 or later instalation.
+You will need a Python 3.11 or later instalation.
 
 ### Install from the Python Packaging Index
  
