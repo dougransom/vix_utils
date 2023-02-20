@@ -224,7 +224,7 @@ def read_csv_future_files(vixutil_path):
 
        
         print("\nwarning trunced")
-        contract_history_frames=(read_csv_future_file(p) for  p in wfns[0:30])
+        contract_history_frames=(read_csv_future_file(p) for  p in wfns)
         futures_frame=pd.concat(contract_history_frames)
         
         print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
