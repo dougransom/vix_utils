@@ -9,6 +9,7 @@ import datetime as dt
 
 import pandas_market_calendars as mcal
 import calendar as cal
+import pandas as pd
 
 class CBOFuturesDates:
     def __init__(self):
@@ -165,18 +166,61 @@ class VXFuturesDownloader:
 
         return text     
 
-         
+def downloaded_file_paths(data_dir):
+        """ returns a tuple (weekly,monthly) list of Path objects
+        """
+        futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
+        futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
+        return list(futures_data_cache_weekly.glob('*.csv')), list(futures_data_cache_monthly.glob("*.csv"))
 
-    
-async def main():
+async def download(vixutil_path):
     async with aiohttp.ClientSession() as session:
-        user_path = Path(user_data_dir())
-        vixutil_path = user_path / ".vixutil"
-        vixutil_path.mkdir(exist_ok=True)
+ 
         v=VXFuturesDownloader(vixutil_path,session)
       
         await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures())
 
+def settlement_date_str_from_fn(fn):
+    return fn[:10]      # the leading iso date is 10 long
+
+def monthly_settlements(monthly_paths):
+    return frozenset(settlement_date_str_from_fn(p.name) for p in monthly_paths)
+
+def week_number_from_fn(fn):
+    return int(fn.split('.')[1].split("_")[1])
+
+
+def read_csv_future_files(vixutil_path):
+        wfns,mfns=downloaded_file_paths(vixutil_path)
+        monthly_settlement_date_strings=monthly_settlements(mfns)
+        def read_csv_future_file(future_path):
+            df = pd.read_csv(future_path)
+            fn=future_path.name
+            settlement_date_str=settlement_date_str_from_fn(fn)
+            week_number=week_number_from_fn(fn)
+            monthly=settlement_date_str in monthly_settlement_date_strings
+            df['Frequency']="Monthly" if monthly else "Weekly"
+            df['Week Number']=week_number
+            if monthly:
+                df['Month Number']=0  #todo
+            df['Settlement Date']=pd.to_datetime(settlement_date_str)
+            df['file']=fn           #just to helpe debugging
+            return df
+
+       
+        print("\nwarning trunced")
+        for p in wfns[0:3]:
+           df=read_csv_future_file(p)
+           print(f"df\n{df}")
+
+
+async def main():
+    user_path = Path(user_data_dir())
+    vixutil_path = user_path / ".vixutil"
+    vixutil_path.mkdir(exist_ok=True)
+#    await download(vixutil_path)
+
+    read_csv_future_files(vixutil_path)
 
 
     
