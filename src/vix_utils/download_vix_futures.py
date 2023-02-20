@@ -206,8 +206,7 @@ def read_csv_future_files(vixutil_path):
             df['WeekOfYear']=week_number
             df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str)
             df['Year']=settlement_date.year
-            if monthly:
-                df['MonthOfYear']=settlement_date.month
+            df['MonthOfYear']=settlement_date.month
 
             df['file']=fn           #just to help debugging
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
@@ -225,7 +224,7 @@ def read_csv_future_files(vixutil_path):
        
         print("\nwarning trunced")
         contract_history_frames=(read_csv_future_file(p) for  p in wfns)
-        futures_frame=pd.concat(contract_history_frames)
+        futures_frame=pd.concat(contract_history_frames,ignore_index=True)
         
         print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
         return futures_frame
@@ -248,7 +247,11 @@ async def main():
     vixutil_path.mkdir(exist_ok=True)
 #    await download(vixutil_path)
 
-    read_csv_future_files(vixutil_path)
+#    df=read_csv_future_files(vixutil_path)
+#    df.to_pickle(vixutil_path/"skinny.pkl")
+    df=pd.read_pickle(vixutil_path/"skinny.pkl")
+#    dfp=pd.pivot(df,index=['Trade Date','Settlement Date'],columns="Close")
+#    print(f"\nPivot \n{dfp}")
 
 
     

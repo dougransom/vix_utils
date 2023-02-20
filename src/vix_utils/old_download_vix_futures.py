@@ -6,6 +6,7 @@ import sys
 from typing import IO
 import urllib.error
 import urllib.parse
+from ./vix_futures_term_structure  import vix_futures_settlement_date_monthly
 import aiofiles
 import aiohttp
 from aiohttp import ClientSession,TCPConnector
