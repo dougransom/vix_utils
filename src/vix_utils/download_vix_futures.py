@@ -119,16 +119,20 @@ class VXFuturesDownloader:
  
     async def download_one_monthly_future(self,year,month):
         url,expiry=generate_monthly_url_date(year,month)
+        tag=f"m_{month}"
         save_path=self.futures_data_cache_monthly
-        return await self.download_one_future(save_path,url,expiry)
+        return await self.download_one_future(save_path,url,tag,expiry)
     
     async def download_one_weekly_future(self,year,week):
         url,expiry=generate_weekly_url_date(year,week)
+        tag=f"w_{week}"
         save_path=self.futures_data_cache_weekly
-        return await self.download_one_future(save_path,url,expiry)
+        return await self.download_one_future(save_path,url,tag,expiry)
     
-    async def download_one_future(self,save_path,url,expiry):
-
+    async def download_one_future(self,save_path,url,tag,expiry):
+        ##Contract tag is a string to be stuck after the file name.  saved file will be
+        #settlementdate.tag.{name from cboe}.
+        #tag can be used to put in month or week.
         async with self.session.get(url) as response:
             if response.status !=  200:
                 return 
@@ -136,7 +140,7 @@ class VXFuturesDownloader:
             content_disposition=headers[_cc]
             cboe_filename= content_disposition.split('"')[-2]   
 
-            file_to_save = f"{expiry}.{cboe_filename}"
+            file_to_save = f"{expiry}.{tag}.{cboe_filename}"
             file_with_path=save_path/file_to_save
             response_data=await response.read()
             await dump_to_file(file_with_path, response_data)
