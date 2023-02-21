@@ -43,6 +43,7 @@ class CBOFuturesDates:
 cboe_futures_dates=CBOFuturesDates()
 
 vix_futures_settlement_date_monthly=t.vix_futures_settlement_date_monthly
+vix_futures_settlement_date_from_trade_date=t.vix_futures_settlement_date_from_trade_date
 
 #sample weeklky url: https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-06-01.csv  for VX+VXT22/M2
 #wich is also in the file name as CFE_VX_M2.csv
@@ -212,13 +213,34 @@ def read_csv_future_files(vixutil_path):
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
             trade_dates = df['Trade Date']
             trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
+            monthly_tenor=pd.Series(index=df.index,dtype='int32')
             settlement_date_local = pd.to_datetime(settlement_date).tz_localize('US/Eastern')
+            look_ahead = 11 #look ahead 25 contracts to determine tenor
+
             for index, trade_date in trade_dates.items():
                 trade_date_local= pd.to_datetime(trade_date).tz_localize('US/Eastern')
                 exchange_open_days = valid_days.loc[trade_date_local:settlement_date_local]
                 trade_days_to_settlement.loc[index]=len(exchange_open_days)
+                #find the next monthly 9 settlement dates
+
+                next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
+                   for tenor in range(1,look_ahead)) 
+                
+                #figure out which tenor applies here.  count the number of settlment dates less than
+                # that contract settlment date.   
+                #  
+                def compare_settlement(s1):
+                    return  settlement_date <= s1
+                
+                settlements_mask=map(compare_settlement,next_settlements)
+
+                nth_month=sum(settlements_mask)
+                if nth_month  < look_ahead:                  #otherwise don't set it.         
+                    monthly_tenor.loc[index]=nth_month    
+
 
             df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
+            df.insert(0,"MonthTenor",monthly_tenor)
             return df
 
        
@@ -245,10 +267,13 @@ async def main():
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
-#    await download(vixutil_path)
-
-#    df=read_csv_future_files(vixutil_path)
-#    df.to_pickle(vixutil_path/"skinny.pkl")
+    download=False
+    if download:
+        await download(vixutil_path)
+    rebuild=True
+    if rebuild:
+        df=read_csv_future_files(vixutil_path)
+        df.to_pickle(vixutil_path/"skinny.pkl")
     df=pd.read_pickle(vixutil_path/"skinny.pkl")
 #    dfp=pd.pivot(df,index=['Trade Date','Settlement Date'],columns="Close")
 #    print(f"\nPivot \n{dfp}")
