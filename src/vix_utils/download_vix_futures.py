@@ -82,6 +82,10 @@ def years_and_months():
     end_year=now.year+2
     return itertools.product( range(2011,end_year),range(1,13))
 
+def archived_years_and_months():
+    "For data from https://www.cboe.com/us/futures/market_statistics/historical_data/archive/"
+    return itertools.product(range(2004,2014),range(1,13))
+
 def years_and_weeks():
     now = dt.datetime.now()
     end_year=now.year+2
@@ -95,6 +99,13 @@ def generate_monthly_url_date(year,month):
     settlement_date_str=settlement_date.isoformat()[:10]
     url=generate_settlement_url(settlement_date_str)    
     return url,settlement_date_str
+def generate_archived_url_date(year,month):
+    code=_futures_months_code[month-1]
+    settlement_date=vix_futures_settlement_date_monthly(year,month)
+    settlement_date_str=settlement_date.isoformat()[:10]
+    yy=settlement_date_str[2:4]
+    url=f"https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_{code}{yy}_VX.csv"
+    return url, settlement_date_str
 
 def generate_monthly_url_dates():
      return (generate_monthly_url_date(y,m) for y,m in years_and_months)
@@ -124,7 +135,8 @@ class VXFuturesDownloader:
         self.futures_data_cache=data_dir/"futures"/"download"
         self.futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
         self.futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
-        for p in (self.futures_data_cache_weekly,self.futures_data_cache_monthly):
+        self.futures_data_cache_archive_monthly=data_dir/"futures"/"download"/"archive_monthly"
+        for p in (self.futures_data_cache_weekly,self.futures_data_cache_monthly,self.futures_data_cache_archive_monthly):
             p.mkdir(exist_ok=True,parents=True) 
  
     async def download_one_monthly_future(self,year,month):
@@ -133,13 +145,24 @@ class VXFuturesDownloader:
         save_path=self.futures_data_cache_monthly
         return await self.download_one_future(save_path,url,tag,expiry)
     
+    async def download_one_archived_monthly_future(self, year, month):
+        url,expiry=generate_archived_url_date(year,month)
+        print(f"url{url} expiry {expiry}")
+        code=_futures_months_code[month-1]
+        tag=f"m_{month}"
+        save_path=self.futures_data_cache_archive_monthly
+        save_fn=f"{expiry}.m_{month}.CFE_VX_{code}{year}"
+        return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
+ 
+
+    
     async def download_one_weekly_future(self,year,week):
         url,expiry=generate_weekly_url_date(year,week)
         tag=f"w_{week}"
         save_path=self.futures_data_cache_weekly
         return await self.download_one_future(save_path,url,tag,expiry)
     
-    async def download_one_future(self,save_path,url,tag,expiry):
+    async def download_one_future(self,save_path,url,tag,expiry,fn=None):
         ##Contract tag is a string to be stuck after the file name.  saved file will be
         #settlementdate.tag.{name from cboe}.
         #tag can be used to put in month or week.
@@ -147,16 +170,22 @@ class VXFuturesDownloader:
             if response.status !=  200:
                 return 
             headers=response.headers
-            content_disposition=headers[_cc]
-            cboe_filename= content_disposition.split('"')[-2]   
-
-            file_to_save = f"{expiry}.{tag}.{cboe_filename}"
+            if fn is None:
+                content_disposition=headers[_cc]  #content_disposition better have the file name
+                cboe_filename=content_disposition.split('"')[-2] 
+                file_to_save = f"{expiry}.{tag}.{cboe_filename}"
+            else:
+                file_to_save=fn 
             file_with_path=save_path/file_to_save
             response_data=await response.read()
             await dump_to_file(file_with_path, response_data)
         
     async def download_monthly_futures(self):
         futures_to_download=(self.download_one_monthly_future(y,m) for (y,m) in years_and_months())
+        await asyncio.gather(*futures_to_download)
+    
+    async def download_archived_monthly_futures(self):
+        futures_to_download=(self.download_one_archived_monthly_future(y,m) for (y,m) in archived_years_and_months())
         await asyncio.gather(*futures_to_download)
 
     async def download_weekly_futures(self):
@@ -187,7 +216,9 @@ async def download(vixutil_path):
  
         v=VXFuturesDownloader(vixutil_path,session)
       
-        await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures())
+#       await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures(), v.download_archived_monthly_futures())
+        await asyncio.gather(v.download_archived_monthly_futures())
+
 
 def settlement_date_str_from_fn(fn):
     return fn[:10]      # the leading iso date is 10 long
@@ -281,8 +312,8 @@ async def main():
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
-    download=False
-    if download:
+    do_download=True
+    if do_download:
         await download(vixutil_path)
     rebuild=True
     if rebuild:
