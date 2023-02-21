@@ -206,27 +206,36 @@ def read_csv_future_files(vixutil_path):
             monthly=settlement_date_str in monthly_settlement_date_strings
             df['Frequency']="Monthly" if monthly else "Weekly"
             df['WeekOfYear']=week_number
-            df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str)
+            df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
             df['Year']=settlement_date.year
             df['MonthOfYear']=settlement_date.month
 
             df['file']=fn           #just to help debugging
+
+            df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+
             trade_dates = df['Trade Date']
             trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
             monthly_tenor=pd.Series(index=df.index,dtype='int32')
-            settlement_date_local = pd.to_datetime(settlement_date).tz_localize('US/Eastern')
+            settlement_date_local = settlement_date  
             look_ahead = 11 #look ahead 25 contracts to determine tenor
 
+ 
             for index, trade_date in trade_dates.items():
-                trade_date_local= pd.to_datetime(trade_date).tz_localize('US/Eastern')
+                
+                trade_date_local=  trade_date  
                 exchange_open_days = valid_days.loc[trade_date_local:settlement_date_local]
+
+ 
                 trade_days_to_settlement.loc[index]=len(exchange_open_days)
+
                 #find the next monthly 9 settlement dates
+
 
                 next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
                    for tenor in range(1,look_ahead)) 
-                
+                 
                 #figure out which monthly tenor applies here.  count the number of settlement dates less than
                 # that contract settlment date.   
                 #  
@@ -236,20 +245,20 @@ def read_csv_future_files(vixutil_path):
                 
                 (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
 
-                #figure out which weekly tenor applies here.
-
-                
-
                 month_count=len(settlements_before_final)
                 monthly_tenor.loc[index]=month_count
+
+                #figure out which weekly tenor applies here.
+
 
             df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
             df.insert(0,"MonthTenor",monthly_tenor)
             return df
 
        
-        print("\nwarning trunced")
-        contract_history_frames=(read_csv_future_file(p) for  p in wfns)
+        print("\nreading")
+        contract_history_frames=list(read_csv_future_file(p) for  p in wfns)
+        print("\nconcanting")
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
         
         print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
