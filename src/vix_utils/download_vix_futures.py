@@ -254,11 +254,8 @@ def read_csv_future_files(vixutil_path):
             df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
             df.insert(0,"MonthTenor",monthly_tenor)
             return df
-
-       
-        print("\nreading")
-        contract_history_frames=list(read_csv_future_file(p) for  p in wfns)
-        print("\nconcanting")
+     
+        contract_history_frames=(read_csv_future_file(p) for  p in wfns)
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
         
         print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
