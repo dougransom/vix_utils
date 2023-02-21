@@ -84,7 +84,9 @@ def years_and_months():
 
 def archived_years_and_months():
     "For data from https://www.cboe.com/us/futures/market_statistics/historical_data/archive/"
-    return itertools.product(range(2004,2014),range(1,13))
+    #specifically avoid 2013 since the data is dirty and duplicated with the
+    #weekly and monthly data from the current download source.
+    return itertools.product(range(2004,2012),range(1,13))
 
 def years_and_weeks():
     now = dt.datetime.now()
@@ -151,7 +153,7 @@ class VXFuturesDownloader:
         code=_futures_months_code[month-1]
         tag=f"m_{month}"
         save_path=self.futures_data_cache_archive_monthly
-        save_fn=f"{expiry}.m_{month}.CFE_VX_{code}{year}"
+        save_fn=f"{expiry}.m_{month}.CFE_VX_{code}{year}.csv"
         return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
  
 
@@ -205,19 +207,49 @@ class VXFuturesDownloader:
         return text     
 
 def downloaded_file_paths(data_dir):
-        """ returns a tuple (weekly,monthly) list of Path objects
+        """ returns a tuple (weekly,monthly,archive_monthly) list of Path objects
         """
-        futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
-        futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
-        return list(futures_data_cache_weekly.glob('*.csv')), list(futures_data_cache_monthly.glob("*.csv"))
+        a=futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
+        b=futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
+        c=futures_data_cache_monthly=data_dir/"futures"/"download"/"archive_monthly"
+        
+        folders_contents=tuple( list(the_dir.glob("*.csv")) for the_dir in (a,b,c))
+
+        return folders_contents  
 
 async def download(vixutil_path):
     async with aiohttp.ClientSession() as session:
  
         v=VXFuturesDownloader(vixutil_path,session)
       
-#       await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures(), v.download_archived_monthly_futures())
-        await asyncio.gather(v.download_archived_monthly_futures())
+        await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures(), v.download_archived_monthly_futures())
+#        await asyncio.gather(v.download_archived_monthly_futures())
+
+        # #july-nov 2013 need to be fixed up by removing the first row.
+        # cache_dir=vixutil_path/"futures"/"download"/"archive_monthly"
+        # to_fix=[
+        # "2013-07-17.m_7.CFE_VX_N2013.csv",
+        # "2013-08-21.m_8.CFE_VX_Q2013.csv",
+        # "2013-10-16.m_10.CFE_VX_V2013.csv",
+        # "2013-11-20.m_11.CFE_VX_X2013.csv"]
+        # for fn in to_fix:
+        #     with open(fn,'r') as fin:
+        #         data=fin.read().splitlines(True)
+        #     with open(fn, 'w') as fout:
+        #         fout.writelines(data[1:])
+
+        #need to find lines with a trailing "," and remove it.  There are a bunch in the 
+        #archived data
+        _,_,amfns=downloaded_file_paths(vixutil_path)
+        for fn in amfns:
+            with open(fn,'r') as fin:
+                data=fin.read().splitlines(True)
+
+            with open(fn,'w') as fout:
+                for line in data:
+                    updated_line=",".join(line.split(",")[0:11]).strip()
+                    print(updated_line,file=fout)
+
 
 
 def settlement_date_str_from_fn(fn):
@@ -231,10 +263,14 @@ def week_number_from_fn(fn):
 
 
 def read_csv_future_files(vixutil_path):
-        wfns,mfns=downloaded_file_paths(vixutil_path)
+        wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
         monthly_settlement_date_strings=monthly_settlements(mfns)
         def read_csv_future_file(future_path):
-            df = pd.read_csv(future_path,parse_dates=[0])
+            try:
+                df = pd.read_csv(future_path,parse_dates=[0])
+            except Exception as e:
+                print(f"\n {e}\n reading\n{future_path} ")
+                raise
             fn=future_path.name
             settlement_date_str=settlement_date_str_from_fn(fn)
             week_number=week_number_from_fn(fn)
@@ -254,9 +290,9 @@ def read_csv_future_files(vixutil_path):
             trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
             monthly_tenor=pd.Series(index=df.index,dtype='int32')
             settlement_date_local = settlement_date  
-            look_ahead = 11 #look ahead 25 contracts to determine tenor
+            look_ahead = 26 #look ahead 25 contracts to determine tenor
 
- 
+            unrealistic_future_tenor=[1001]
             for index, trade_date in trade_dates.items():
                 
                 trade_date_local=  trade_date  
@@ -265,11 +301,12 @@ def read_csv_future_files(vixutil_path):
  
                 trade_days_to_settlement.loc[index]=len(exchange_open_days)
 
-                #find the next monthly 9 settlement dates
+                #find the next   settlement dates plus one way in the future
+                #so that split_after always returns two items.
 
 
                 next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
-                   for tenor in range(1,look_ahead)) 
+                   for tenor in itertools.chain(range(1,look_ahead),unrealistic_future_tenor)) 
                  
                 #figure out which monthly tenor applies here.  count the number of settlement dates less than
                 # that contract settlment date.   
@@ -277,8 +314,10 @@ def read_csv_future_files(vixutil_path):
                 settlement_date_py=settlement_date.date()
                 def compare_settlement(s1):
                     return  settlement_date_py <= s1
-                
+#                try:
                 (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
+ #               except Exception as e:
+ #                   pass
 
                 month_count=len(settlements_before_final)
                 monthly_tenor.loc[index]=month_count
@@ -290,7 +329,7 @@ def read_csv_future_files(vixutil_path):
             df.insert(0,"MonthTenor",monthly_tenor)
             return df
      
-        contract_history_frames=(read_csv_future_file(p) for  p in wfns)
+        contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns)]
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
         
         print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
