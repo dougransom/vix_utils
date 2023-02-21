@@ -13,6 +13,10 @@ import calendar as cal
 import pandas as pd
 import more_itertools
 
+
+#TODO
+#https://www.cboe.com/us/futures/market_statistics/historical_data/archive/
+
 class CBOFuturesDates:
     def __init__(self):
 
