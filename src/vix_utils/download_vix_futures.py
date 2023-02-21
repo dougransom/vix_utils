@@ -229,10 +229,11 @@ def read_csv_future_files(vixutil_path):
                 #figure out which tenor applies here.  count the number of settlment dates less than
                 # that contract settlment date.   
                 #  
+                settlement_date_py=settlement_date.date()
                 def compare_settlement(s1):
-                    return  settlement_date <= s1
+                    return  s1 <= settlement_date_py 
                 
-                settlements_mask=map(compare_settlement,next_settlements)
+                settlements_mask=list(map(compare_settlement,next_settlements))
 
                 nth_month=sum(settlements_mask)
                 if nth_month  < look_ahead:                  #otherwise don't set it.         
