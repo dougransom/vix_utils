@@ -11,6 +11,7 @@ import numpy as np
 import pandas_market_calendars as mcal
 import calendar as cal
 import pandas as pd
+import more_itertools
 
 class CBOFuturesDates:
     def __init__(self):
@@ -226,19 +227,18 @@ def read_csv_future_files(vixutil_path):
                 next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
                    for tenor in range(1,look_ahead)) 
                 
-                #figure out which tenor applies here.  count the number of settlment dates less than
+                #figure out which tenor applies here.  count the number of settlement dates less than
                 # that contract settlment date.   
                 #  
                 settlement_date_py=settlement_date.date()
                 def compare_settlement(s1):
-                    return  s1 <= settlement_date_py 
+                    return  settlement_date_py <= s1
                 
-                settlements_mask=list(map(compare_settlement,next_settlements))
+                (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
+                
 
-                nth_month=sum(settlements_mask)
-                if nth_month  < look_ahead:                  #otherwise don't set it.         
-                    monthly_tenor.loc[index]=nth_month    
-
+                month_count=len(settlements_before_final)
+                monthly_tenor.loc[index]=month_count
 
             df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
             df.insert(0,"MonthTenor",monthly_tenor)
