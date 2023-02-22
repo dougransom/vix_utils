@@ -40,7 +40,6 @@ class CBOFuturesDates:
         wednesday_in_first_week = m[0][wednesday_index] != 0
         first_wednesday = md[0 if wednesday_in_first_week else 1][wednesday_index]
         settlement_date = first_wednesday + dt.timedelta(weeks=(week_number - 1))
-        #        print(f"Weekly {year} {month} {week_number}  settlement date: {settlement_date}")
         # no knowns special cases settlment dates for weekly settlement dates as of 2020-08-15
 
         return settlement_date
@@ -149,7 +148,6 @@ class VXFuturesDownloader:
     
     async def download_one_archived_monthly_future(self, year, month):
         url,expiry=generate_archived_url_date(year,month)
-        print(f"url{url} expiry {expiry}")
         code=_futures_months_code[month-1]
         tag=f"m_{month}"
         save_path=self.futures_data_cache_archive_monthly
@@ -329,11 +327,19 @@ def read_csv_future_files(vixutil_path):
             df.insert(0,"MonthTenor",monthly_tenor)
             return df
      
+        #just read the weeklies, and the montlies prior to 2013.
+        #the monthlys are the same as weeklies even though we did download the monthlies a second time we ignore them.
+        #   
         contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns)]
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
-        
-        print(f"futures_frame\n{futures_frame}\nindex\n{futures_frame.index}")
-        return futures_frame
+        futures_frame.set_index(["Trade Date","Settlement Date"],inplace=True)
+        column_order=['Frequency','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Open', 'High',
+       'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
+       'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'file' ]
+
+        futures_frame.sort_index(inplace=True)
+        futures_frame_ordered_cols=futures_frame[column_order]
+        return futures_frame_ordered_cols
 
 
 async def main():
@@ -351,7 +357,7 @@ async def main():
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
-    do_download=True
+    do_download=False
     if do_download:
         await download(vixutil_path)
     rebuild=True
@@ -359,9 +365,6 @@ async def main():
         df=read_csv_future_files(vixutil_path)
         df.to_pickle(vixutil_path/"skinny.pkl")
     df=pd.read_pickle(vixutil_path/"skinny.pkl")
-#    dfp=pd.pivot(df,index=['Trade Date','Settlement Date'],columns="Close")
-#    print(f"\nPivot \n{dfp}")
-
 
     
 asyncio.run(main())    
