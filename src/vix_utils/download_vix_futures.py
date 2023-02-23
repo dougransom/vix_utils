@@ -273,7 +273,7 @@ def read_csv_future_files(vixutil_path):
             settlement_date_str=settlement_date_str_from_fn(fn)
             week_number=week_number_from_fn(fn)
             monthly=settlement_date_str in monthly_settlement_date_strings
-            df['Frequency']="Monthly" if monthly else "Weekly"
+            df['Weekly']=not monthly
             df['WeekOfYear']=week_number
             df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
             df['Year']=settlement_date.year
@@ -333,7 +333,7 @@ def read_csv_future_files(vixutil_path):
         contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns)]
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
         futures_frame.set_index(["Trade Date","Settlement Date"],inplace=True)
-        column_order=['Frequency','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Open', 'High',
+        column_order=['Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'file' ]
 
@@ -357,7 +357,7 @@ async def main():
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
-    do_download=False
+    do_download=True
     if do_download:
         await download(vixutil_path)
     rebuild=True
