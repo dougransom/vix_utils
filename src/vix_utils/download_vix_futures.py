@@ -87,14 +87,12 @@ def archived_years_and_months():
     "For data from https://www.cboe.com/us/futures/market_statistics/historical_data/archive/"
     #specifically avoid 2013 since the data is dirty and duplicated with the
     #weekly and monthly data from the current download source.
-    print("Warning not downoading archived")
 
-    return list(itertools.product(range(2004,2012),range(1,13)))[0:1]
+    return list(itertools.product(range(2004,2012),range(1,13)))
 
 def years_and_weeks():
     now = dt.datetime.now()
     end_year=now.year+2
-    end_year=2014
     return itertools.product( range(2011,end_year),range(1,53))
 
 def generate_settlement_url(date_str):

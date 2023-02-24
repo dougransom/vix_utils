@@ -48,3 +48,15 @@ def test_jan_17_2013():
         print(f"tenor {tenor} settlment {settlement} expected {expected}")
   
 
+def test_dec_21_2016():
+    yy=2016
+    mm=12
+    dd=21
+    settlements_from_tenor=partial(vix_futures_settlement_date_from_trade_date,yy,mm,dd)
+    dates_str=['2016-12-21', '2017-01-18', '2017-02-15', '2017-03-22', '2017-04-19', '2017-05-17', '2017-06-21', '2017-07-19', '2017-08-16']
+    dates=[fiso(strdate) for strdate in dates_str]
+    for tenor, expected in zip(range(1,1+len(dates)),dates):
+        settlement=settlements_from_tenor(tenor)
+        assert(settlement==expected)
+        print(f"tenor {tenor} settlment {settlement} expected {expected}")
+ 

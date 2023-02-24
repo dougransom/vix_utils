@@ -51,8 +51,8 @@ def vix_futures_settlement_date_monthly(year: int, month: int):
     next_month = next_month % 12 if options_next_year else next_month
     options_year = year + 1 if options_next_year else year  # keep for debugging
 
-    m = c.monthdayscalendar(year, next_month)
-    md = c.monthdatescalendar(year, next_month)
+    m = c.monthdayscalendar(options_year, next_month)
+    md = c.monthdatescalendar(options_year, next_month)
 
     friday_index = -2
     # 2 to index the 3d week, 0 based index for m
