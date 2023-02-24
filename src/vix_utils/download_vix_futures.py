@@ -4,7 +4,7 @@ import aiofiles
 from appdirs import user_data_dir,user_log_dir
 from pathlib import Path
 import itertools
-import vix_futures_term_struture as t
+import vix_futures_term_structure as t
 import datetime as dt
 import numpy as np
 
@@ -76,20 +76,25 @@ _futures_months_and_codes = list(zip(_futures_months_code,_futures_month_strings
 
 start_year=2013
 
+
 def years_and_months():
     now = dt.datetime.now()
     end_year=now.year+2
+
     return itertools.product( range(2011,end_year),range(1,13))
 
 def archived_years_and_months():
     "For data from https://www.cboe.com/us/futures/market_statistics/historical_data/archive/"
     #specifically avoid 2013 since the data is dirty and duplicated with the
     #weekly and monthly data from the current download source.
-    return itertools.product(range(2004,2012),range(1,13))
+    print("Warning not downoading archived")
+
+    return list(itertools.product(range(2004,2012),range(1,13)))[0:1]
 
 def years_and_weeks():
     now = dt.datetime.now()
     end_year=now.year+2
+    end_year=2014
     return itertools.product( range(2011,end_year),range(1,53))
 
 def generate_settlement_url(date_str):

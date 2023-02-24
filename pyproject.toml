@@ -26,7 +26,22 @@ dependencies= [
 
 
 [project.optional-dependencies]
-
+test="pytest"
+[tool.pytest.ini_options]
+minversion = "7.1.2"
+addopts = "--capture=tee-sys "
+# very important
+#the pythonpath lets pytest load code in your source area
+#in addition to that in site-packages etc.
+#you may want to run your tests without install natlinkcore with flit or pip
+pythonpath = [
+]
+testpaths= [
+		"test",
+]
+python_files = [
+			"test_*.py",
+	]
 [project.scripts]
 vixutil = "vix_utils.vixutil:main"
 [project.urls]

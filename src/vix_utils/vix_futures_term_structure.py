@@ -85,7 +85,7 @@ def vix_futures_settlement_date_from_trade_date(year, month, day, tenor):
     '''tenor is the number of months (or part months) to expiration.  the front month tenor is 1'''
     this_calendar_months_settlement = vix_futures_settlement_date_monthly(year, month)
     # deal with the part of the month, where the settlment month is the following month
-    months_forward_for_tenor = (0 if day < this_calendar_months_settlement.day else 1)
+    months_forward_for_tenor = (0 if day <=  this_calendar_months_settlement.day else 1)
     month_of_settlement = (month + months_forward_for_tenor + tenor - 1) % 12
     year_of_settlement = year + (
         1 if month_of_settlement < month else 0) + tenor//12

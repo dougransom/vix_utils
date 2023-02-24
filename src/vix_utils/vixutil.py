@@ -6,7 +6,7 @@ term structure, and the VIX cash term structure.
 """
 import argparse
 from appdirs import user_data_dir,user_log_dir
-import vix_utils.vix_futures_term_struture as v
+import vix_utils.vix_futures_term_structure as v
 import vix_utils.vix_cash_term_structure as cash
 import pandas as pd
 import logging as logging
