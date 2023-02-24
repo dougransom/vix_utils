@@ -335,12 +335,11 @@ def read_csv_future_files(vixutil_path):
         #   
         contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns)]
         futures_frame=pd.concat(contract_history_frames,ignore_index=True)
-        futures_frame.set_index(["Trade Date"],inplace=True)
-        column_order=['Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
+        column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'file' ]
 
-        futures_frame.sort_index(inplace=True)
+        futures_frame.sort_values(by=["Trade Date","Settlement Date"])
         futures_frame_ordered_cols=futures_frame[column_order]
         return futures_frame_ordered_cols
 
