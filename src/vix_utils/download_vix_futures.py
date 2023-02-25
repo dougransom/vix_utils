@@ -439,8 +439,10 @@ def read_csv_future_files(vixutil_path):
 
         return futures_frame_ordered_cols
 
-
-async def load():
+def load_vix_term_structure():
+    return asyncio.run(async_load_vix_term_structure())
+    
+async def async_load_vix_term_structure():
     global cfe_mcal, valid_days
     print("Getting Market calendar")
     cfe_mcal =  mcal.get_calendar('CFE')
@@ -471,4 +473,4 @@ async def load():
     return df
 
 if __name__ == "__main__":  
-    asyncio.run(load())    
+    load_vix_term_structure()
