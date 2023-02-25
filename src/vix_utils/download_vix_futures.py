@@ -150,11 +150,14 @@ def generate_monthly_url_dates():
      return (generate_monthly_url_date(y,m) for y,m in years_and_months)
 
 def generate_weekly_url_date(year,week):
-    
-    settlement_date=cboe_futures_dates.vix_settlement_date_weekly(year,week)
-    settlement_date_str=settlement_date.isoformat()[:10]
-    url=generate_settlement_url(settlement_date_str)    
-    return url,settlement_date_str
+    """returns two possibilities"""
+    settlement_dates=cboe_futures_dates.vix_settlement_date_weekly(year,week)
+
+    settlement_dates_str=tuple(d.isoformat()[:10] for d in settlement_dates)
+
+    urls=tuple( generate_settlement_url(s) for s in settlement_dates_str)
+
+    return tuple(zip(urls,settlement_dates_str))
 
 async def dump_to_file(fn,data):
         try:
@@ -196,13 +199,16 @@ class VXFuturesDownloader:
 
     
     async def download_one_weekly_future(self,year,week):
-        url,expiry=generate_weekly_url_date(year,week)
-        tag=f"w_{week}"
-        save_path=self.futures_data_cache_weekly
+        url_expiries=generate_weekly_url_date(year,week)
+        #one url should be good and onewill be bad.  depends on the settlment date.
+        async with asyncio.TaskGroup() as tg:
+            for url,expiry in url_expiries:
+                tag=f"w_{week}"
+                save_path=self.futures_data_cache_weekly
 
-        save_fn=f"{expiry}.w_{week}.CFE_VX_{year}.csv"
+                save_fn=f"{expiry}.w_{week}.CFE_VX_{year}.csv"
+                tg.create_task(self.download_one_future(save_path,url,tag,expiry,save_fn))
  
-        return await self.download_one_future(save_path,url,tag,expiry,save_fn)
     
     async def download_one_future(self,save_path,url,tag,expiry,fn):
         ##Contract tag is a string to be stuck after the file name.  saved file will be
