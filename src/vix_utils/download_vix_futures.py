@@ -4,7 +4,7 @@ import aiofiles
 from appdirs import user_data_dir,user_log_dir
 from pathlib import Path
 import itertools
-import vix_futures_term_structure as t
+import vix_utils.vix_futures_term_structure as t
 import datetime as dt
 import numpy as np
 
@@ -42,7 +42,15 @@ class CBOFuturesDates:
         settlement_date = first_wednesday + dt.timedelta(weeks=(week_number - 1))
         # no knowns special cases settlment dates for weekly settlement dates as of 2020-08-15
 
-        return settlement_date
+        #if the week is when a monthly could expire, the monthly could expire on a different day (the day before).
+        month=settlement_date.month
+        monthly_settlement_date = t.vix_futures_settlement_date_monthly(year,month)
+        days_difference=abs( (monthly_settlement_date-settlement_date).days)
+        monthly_overrides = days_difference >= 1 and days_difference <4
+         
+        actual_settlment_date=monthly_settlement_date if monthly_overrides else settlement_date
+ 
+        return actual_settlment_date
     
 cboe_futures_dates=CBOFuturesDates()
 
@@ -176,13 +184,25 @@ class VXFuturesDownloader:
 
         file_to_save=fn
         file_with_path=save_path/file_to_save
+        pk_path=pk_path_from_csv_path(file_with_path)
 
         #if the pickle file corresponding to this csv has already been created, we don't need to download again.
-        if(pk_path_from_csv_path(file_with_path).exists()):
+        if(pk_path.exists()):
             return
 
         async with self.session.get(url) as response:
             if response.status !=  200:
+                if dt.date.fromisoformat(expiry) < dt.date.today():
+                    #this contract never traded, since we are trying every possible week.
+                    #we don't want to download this next time through.
+                    blank_csv="Trade Date,Futures,Open,High,Low,Close,Settle,Change,Total Volume,EFP,Open Interest"
+                    print(f"failed ulr {url} dumping {blank_csv}  to ${file_with_path}")
+                    await dump_to_file(file_with_path,blank_csv)
+                    #force an empty data frame to be saved as well
+   
+                    df=pd.DataFrame()
+                    df.to_pickle(pk_path)
+
                 return 
             headers=response.headers
             response_data=await response.read()
@@ -218,7 +238,8 @@ def downloaded_file_paths(data_dir):
         a=futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
         b=futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
         c=futures_data_cache_monthly=data_dir/"futures"/"download"/"archive_monthly"
-        
+
+
         folders_contents=tuple( list(the_dir.glob("*.csv")) for the_dir in (a,b,c))
 
         return folders_contents  
@@ -227,8 +248,8 @@ async def download(vixutil_path):
     async with aiohttp.ClientSession() as session:
  
         v=VXFuturesDownloader(vixutil_path,session)
-      
-        await asyncio.gather(v.download_monthly_futures(),v.download_weekly_futures(), v.download_archived_monthly_futures())
+        #skip the monthly
+        await asyncio.gather(v.download_weekly_futures(), v.download_archived_monthly_futures())
 #        await asyncio.gather(v.download_archived_monthly_futures())
 
         # #july-nov 2013 need to be fixed up by removing the first row.
@@ -273,6 +294,13 @@ def pk_path_from_csv_path(csv_path):
 
 def read_csv_future_files(vixutil_path):
         wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
+        cached_skinny_path=vixutil_path/"skinny.pkl"
+        cached_skinny_expired_path=vixutil_path/"skinny_settled.pkl"
+        print("reading cache")
+        if cached_skinny_expired_path.exists():
+            settled_frames=pd.read_pickle(cached_skinny_expired_path)
+        print("read cache")
+
         monthly_settlement_date_strings=monthly_settlements(mfns)
         def read_csv_future_file(future_path):
             future_pkl_path=pk_path_from_csv_path(future_path)
@@ -294,7 +322,7 @@ def read_csv_future_files(vixutil_path):
             df['Year']=settlement_date.year
             df['MonthOfYear']=settlement_date.month
 
-            df['file']=fn           #just to help debugging
+            df['File']=fn
 
             df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
@@ -343,50 +371,71 @@ def read_csv_future_files(vixutil_path):
             #it is expensive to build this frame, largely due to localizing timestamps.
             #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
             #if the last timestamp is the settlment date
+
+
             last_row=df.iloc[-1]
-            if last_row["Trade Date"]==last_row["Settlement Date"]:
+            expired=last_row["Trade Date"]==last_row["Settlement Date"]
+            df["Expired"]=expired
+            if expired:
                 df.to_pickle(future_pkl_path)
             return df
      
         #just read the weeklies, and the montlies prior to 2013.
         #the monthlys are the same as weeklies even though we did download the monthlies a second time we ignore them.
         #   
-        contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns)]
-        futures_frame=pd.concat(contract_history_frames,ignore_index=True)
+        already_expired=frozenset(settled_frames["File"])
+        def is_expired(fp):
+            test_expired=fp.name in already_expired
+            return test_expired
+        print("Reading")
+        print("now")
+        #exclude reading the frames already in the cached data frame for futures expired.
+        contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns) if not is_expired(p)]
+        print("Merging")
+        futures_frame=pd.concat(itertools.chain([settled_frames],contract_history_frames),ignore_index=True)
+        print("Column ordering")
         column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
-       'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'file' ]
+       'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
         futures_frame.sort_values(by=["Trade Date","Settlement Date"])
         futures_frame_ordered_cols=futures_frame[column_order]
+        futures_frame_expired=futures_frame_ordered_cols[futures_frame_ordered_cols["Expired"]==True]
+        for df,p in ((futures_frame_ordered_cols,cached_skinny_path), (futures_frame_expired,cached_skinny_expired_path)): 
+            df.to_pickle(p)
 
-            
         return futures_frame_ordered_cols
 
 
-async def main():
+async def load():
     global cfe_mcal, valid_days
+    print("Getting Market calendar")
     cfe_mcal =  mcal.get_calendar('CFE')
+    print("Market Calendar Got")
     #valid_days is expensive, so do it once here
     now=dt.datetime.now()
     #get info for futures expiring up to January 1 in six years.
     #no futures currently trade that far out so this should be fine
     five_years_away=dt.datetime(now.year+6,1,1)
 
+    print("Valid days")
     valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
-
+    print("got Valid days")
 
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
     do_download=True
     if do_download:
+        print("Starting download")
         await download(vixutil_path)
+        print("Download")
     rebuild=True
     if rebuild:
         df=read_csv_future_files(vixutil_path)
-        df.to_pickle(vixutil_path/"skinny.pkl")
+ 
     df=pd.read_pickle(vixutil_path/"skinny.pkl")
+    return df
 
-    
-asyncio.run(main())    
+if __name__ == "__main__":  
+    asyncio.run(load())    
