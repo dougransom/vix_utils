@@ -15,7 +15,7 @@ settlement_test_dates= [((2020,39),'2020-09-23'),
                         ((2022,11), '2022-03-15'),  #monthly
                         ((2022,12), '2022-03-23'),
                         ((2022,13), '2022-03-30'),
-
+                        ((2020,48), '2020-11-24'),
                         ]
 
 @pytest.mark.parametrize("yy_week,expected_date_str",settlement_test_dates)

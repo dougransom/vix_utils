@@ -29,6 +29,7 @@ class CBOFuturesDates:
         five_years_away=dt.datetime(now.year+6,1,1)
 
         self.valid_days=self.cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
+        self.valid_days_set=frozenset(d.date() for d in self.valid_days.dt.to_pydatetime())
 
     def vix_settlement_date_weekly(self, year,  week_number):
         c = cal.Calendar(cal.SUNDAY)
@@ -47,10 +48,18 @@ class CBOFuturesDates:
         monthly_settlement_date = t.vix_futures_settlement_date_monthly(year,month)
         days_difference=abs( (monthly_settlement_date-settlement_date).days)
         monthly_overrides = days_difference >= 1 and days_difference <4
-         
-        actual_settlment_date=monthly_settlement_date if monthly_overrides else settlement_date
- 
-        return actual_settlment_date
+        if monthly_overrides:
+            return monthly_settlement_date 
+
+        #is the wednesday, thursday, friday a holiday?  then settle on the tuesday.
+        #at least as far as we can tell.
+        days_to_test=set(settlement_date+dt.timedelta(days=i) for i in range(0,3))
+     
+      
+        if not days_to_test <= self.valid_days_set:
+            return settlement_date - dt.timedelta(days=1)
+
+        return settlement_date
     
 cboe_futures_dates=CBOFuturesDates()
 
