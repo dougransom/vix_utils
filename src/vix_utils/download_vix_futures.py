@@ -41,19 +41,37 @@ class CBOFuturesDates:
         wednesday_in_first_week = m[0][wednesday_index] != 0
         first_wednesday = md[0 if wednesday_in_first_week else 1][wednesday_index]
         settlement_date = first_wednesday + dt.timedelta(weeks=(week_number - 1))
-        # no knowns special cases settlment dates for weekly settlement dates as of 2020-08-15
+
+        #the logic to see if a settlment ocurrs on a tuesday is a total nuisance.  Could be the montly 
+        #expires on a tuesday, could be a wednesday.  
+
+        #we are just going to return  the wednesday and the tuesday.
+        #try and download them both
+
+        the_tuesday=settlement_date  -dt.timedelta(days=1)
+
+        return (settlement_date,the_tuesday)
+
+        
+        #this is how we tried to download the exact correct date before but it doesn't work.    
 
         #if the week is when a monthly could expire, the monthly could expire on a different day (the day before).
         month=settlement_date.month
         monthly_settlement_date = t.vix_futures_settlement_date_monthly(year,month)
         days_difference=abs( (monthly_settlement_date-settlement_date).days)
+
+
+
+
+
+
         monthly_overrides = days_difference >= 1 and days_difference <4
         if monthly_overrides:
             return monthly_settlement_date 
 
-        #is the wednesday, thursday, friday a holiday?  then settle on the tuesday.
-        #at least as far as we can tell.
-        days_to_test=set(settlement_date+dt.timedelta(days=i) for i in range(0,3))
+        #is the wednesday,  friday a holiday?  then settle on the tuesday.
+        #holidy on thursday, who knows.
+        days_to_test=set(settlement_date+dt.timedelta(days=i) for i in [0,2])
      
       
         if not days_to_test <= self.valid_days_set:
@@ -205,7 +223,7 @@ class VXFuturesDownloader:
                     #this contract never traded, since we are trying every possible week.
                     #we don't want to download this next time through.
                     blank_csv="Trade Date,Futures,Open,High,Low,Close,Settle,Change,Total Volume,EFP,Open Interest"
-                    print(f"failed ulr {url} dumping {blank_csv}  to ${file_with_path}")
+                    print(f"\nfailed url:\n{url}\n${file_with_path}")
                     await dump_to_file(file_with_path,blank_csv)
                     #force an empty data frame to be saved as well
    
