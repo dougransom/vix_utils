@@ -147,7 +147,8 @@ class VXFuturesDownloader:
         url,expiry=generate_monthly_url_date(year,month)
         tag=f"m_{month}"
         save_path=self.futures_data_cache_monthly
-        return await self.download_one_future(save_path,url,tag,expiry)
+        save_fn=f"{expiry}.m_{month}.CFE_VX_{year}.csv"        
+        return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
     
     async def download_one_archived_monthly_future(self, year, month):
         url,expiry=generate_archived_url_date(year,month)
@@ -163,23 +164,27 @@ class VXFuturesDownloader:
         url,expiry=generate_weekly_url_date(year,week)
         tag=f"w_{week}"
         save_path=self.futures_data_cache_weekly
-        return await self.download_one_future(save_path,url,tag,expiry)
+
+        save_fn=f"{expiry}.w_{week}.CFE_VX_{year}.csv"
+ 
+        return await self.download_one_future(save_path,url,tag,expiry,save_fn)
     
-    async def download_one_future(self,save_path,url,tag,expiry,fn=None):
+    async def download_one_future(self,save_path,url,tag,expiry,fn):
         ##Contract tag is a string to be stuck after the file name.  saved file will be
         #settlementdate.tag.{name from cboe}.
         #tag can be used to put in month or week.
+
+        file_to_save=fn
+        file_with_path=save_path/file_to_save
+
+        #if the pickle file corresponding to this csv has already been created, we don't need to download again.
+        if(pk_path_from_csv_path(file_with_path).exists()):
+            return
+
         async with self.session.get(url) as response:
             if response.status !=  200:
                 return 
             headers=response.headers
-            if fn is None:
-                content_disposition=headers[_cc]  #content_disposition better have the file name
-                cboe_filename=content_disposition.split('"')[-2] 
-                file_to_save = f"{expiry}.{tag}.{cboe_filename}"
-            else:
-                file_to_save=fn 
-            file_with_path=save_path/file_to_save
             response_data=await response.read()
             await dump_to_file(file_with_path, response_data)
         
@@ -262,11 +267,18 @@ def monthly_settlements(monthly_paths):
 def week_number_from_fn(fn):
     return int(fn.split('.')[1].split("_")[1])
 
+def pk_path_from_csv_path(csv_path):
+    pkl_path=csv_path.with_suffix('.pkl')
+    return pkl_path
 
 def read_csv_future_files(vixutil_path):
         wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
         monthly_settlement_date_strings=monthly_settlements(mfns)
         def read_csv_future_file(future_path):
+            future_pkl_path=pk_path_from_csv_path(future_path)
+            if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
+                return pd.read_pickle(future_pkl_path)
+
             try:
                 df = pd.read_csv(future_path,parse_dates=[0])
             except Exception as e:
@@ -328,6 +340,12 @@ def read_csv_future_files(vixutil_path):
 
             df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
             df.insert(0,"MonthTenor",monthly_tenor)
+            #it is expensive to build this frame, largely due to localizing timestamps.
+            #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
+            #if the last timestamp is the settlment date
+            last_row=df.iloc[-1]
+            if last_row["Trade Date"]==last_row["Settlement Date"]:
+                df.to_pickle(future_pkl_path)
             return df
      
         #just read the weeklies, and the montlies prior to 2013.
@@ -341,6 +359,8 @@ def read_csv_future_files(vixutil_path):
 
         futures_frame.sort_values(by=["Trade Date","Settlement Date"])
         futures_frame_ordered_cols=futures_frame[column_order]
+
+            
         return futures_frame_ordered_cols
 
 
