@@ -17,6 +17,21 @@ import more_itertools
 #TODO
 #https://www.cboe.com/us/futures/market_statistics/historical_data/archive/
 
+def vix_settlements(start_year,end_year):
+    j1_start=dt.date(start_year,1,1)
+    dayofweek=j1_start.weekday()
+    one_week=dt.timedelta(days=7)
+    if dayofweek==2: #wednesday
+        yield j1_start
+    advance_days=(1-dayofweek) %7
+    tuesday=j1_start+dt.timedelta(advance_days)               
+    while tuesday.year < end_year:
+        yield tuesday                  #the tuesday
+        wednesday=tuesday + dt.timedelta(days=1)  #the wednesday
+        if wednesday.year < end_year:
+            yield wednesday
+        tuesday=tuesday+one_week
+
 class CBOFuturesDates:
     def __init__(self):
 
@@ -31,11 +46,42 @@ class CBOFuturesDates:
         self.valid_days=self.cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
         self.valid_days_set=frozenset(d.date() for d in self.valid_days.dt.to_pydatetime())
 
+    #we might have some extra dates at the beginning and end
+
+
+            
+
+
+
+
+
+
+
     def vix_settlement_date_weekly(self, year,  week_number):
         c = cal.Calendar(cal.SUNDAY)
 
+        #tricky some years there are 53 weeks.
+        #Cboe seems to number the weeks based on the day of expiry, not the week number of year
+        #dec 31 2019 would be the 53 week.
+        #jan 2, 2019 would be the 1st week.
+
+
+ 
+        j1=dt.date(year,1,1)  #jan 1
+        s1=j1+dt.timedelta(days=6-j1.weekday())  #first sunday
+
+        fw=s1+dt.timedelta(days=3)  #first wednesday
+        ft=s1+dt.timedelta(days=2)  #first tuesday
+
+        week_offset=dt.timedelta(days=(week_number-1)*7)
+
+        ws=fw+week_offset
+        ts=ft+week_offset
+        return ws,ts
+
         m = c.monthdayscalendar(year, 1)
         md = c.monthdatescalendar(year, 1)
+
         # find the first wednesday of the year
         wednesday_index = 3
         wednesday_in_first_week = m[0][wednesday_index] != 0
@@ -109,8 +155,11 @@ _futures_month_numbers=list(range(1,len(_futures_month_strings)+1))
 
 _futures_months_and_codes = list(zip(_futures_months_code,_futures_month_strings,_futures_month_numbers))
 
-start_year=2013
-
+def start_year():
+        return 2013
+def stop_year():
+    now = dt.datetime.now()
+    return now.year+2
 
 def years_and_months():
     now = dt.datetime.now()
@@ -149,15 +198,12 @@ def generate_archived_url_date(year,month):
 def generate_monthly_url_dates():
      return (generate_monthly_url_date(y,m) for y,m in years_and_months)
 
-def generate_weekly_url_date(year,week):
+def generate_weekly_url_date(date):
     """returns two possibilities"""
-    settlement_dates=cboe_futures_dates.vix_settlement_date_weekly(year,week)
-
-    settlement_dates_str=tuple(d.isoformat()[:10] for d in settlement_dates)
-
-    urls=tuple( generate_settlement_url(s) for s in settlement_dates_str)
-
-    return tuple(zip(urls,settlement_dates_str))
+    date_str=date.isoformat()[0:10]
+    url=generate_settlement_url(date_str)
+ 
+    return date_str,url
 
 async def dump_to_file(fn,data):
         try:
@@ -198,16 +244,15 @@ class VXFuturesDownloader:
  
 
     
-    async def download_one_weekly_future(self,year,week):
-        url_expiries=generate_weekly_url_date(year,week)
-        #one url should be good and onewill be bad.  depends on the settlment date.
-        async with asyncio.TaskGroup() as tg:
-            for url,expiry in url_expiries:
-                tag=f"w_{week}"
-                save_path=self.futures_data_cache_weekly
+    async def download_one_weekly_future(self,date):
+        expiry,url=generate_weekly_url_date(date)
 
-                save_fn=f"{expiry}.w_{week}.CFE_VX_{year}.csv"
-                tg.create_task(self.download_one_future(save_path,url,tag,expiry,save_fn))
+        tag=f"w_"  #we don't know the week #
+        save_path=self.futures_data_cache_weekly
+        year=date.year
+
+        save_fn=f"{expiry}.w_.CFE_VX_{year}.csv"
+        await self.download_one_future(save_path,url,tag,expiry,save_fn)
  
     
     async def download_one_future(self,save_path,url,tag,expiry,fn):
@@ -250,7 +295,8 @@ class VXFuturesDownloader:
         await asyncio.gather(*futures_to_download)
 
     async def download_weekly_futures(self):
-        futures_to_download=(self.download_one_weekly_future(y,m) for (y,m) in years_and_weeks())
+        dates=vix_settlements(start_year(),stop_year())
+        futures_to_download=(self.download_one_weekly_future(d) for d in dates)
         await asyncio.gather(*futures_to_download)
 
     async def download_history_root(self):
@@ -347,10 +393,10 @@ def read_csv_future_files(vixutil_path):
                 raise
             fn=future_path.name
             settlement_date_str=settlement_date_str_from_fn(fn)
-            week_number=week_number_from_fn(fn)
+            #week_number  TODO FIGURE THIS OUT
             monthly=settlement_date_str in monthly_settlement_date_strings
             df['Weekly']=not monthly
-            df['WeekOfYear']=week_number
+            #df['WeekOfYear']=?  TODO Figure this out
             df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
             df['Year']=settlement_date.year
             df['MonthOfYear']=settlement_date.month

@@ -17,7 +17,7 @@ import configparser
 from pathlib import Path
 from vix_utils.futures_utils import timeit
 
-quandl_api_key = f"This is not a valid quandle key {__file__}"
+
 
 
 _override_data_path = False

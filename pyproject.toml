@@ -11,7 +11,7 @@ classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",
 	"Topic :: Office/Business :: Financial :: Investment"]
-version = '0.0.0.0.5'
+version = '0.0.1'
 readme="README.md"
 requires-python=">=3.11"
 dependencies= [
