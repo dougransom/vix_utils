@@ -11,9 +11,12 @@ classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",
 	"Topic :: Office/Business :: Financial :: Investment"]
-version = '0.0.1'
+
 readme="README.md"
 requires-python=">=3.11"
+
+dynamic=["version"]
+
 dependencies= [
     "pandas",
     "pandas-market-calendars",
@@ -26,7 +29,7 @@ dependencies= [
 
 
 [project.optional-dependencies]
-test="pytest"
+test=["pytest"]
 [tool.pytest.ini_options]
 minversion = "7.1.2"
 addopts = "--capture=tee-sys "
