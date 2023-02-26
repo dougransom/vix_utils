@@ -328,8 +328,7 @@ async def download(vixutil_path):
  
         v=VXFuturesDownloader(vixutil_path,session)
         #skip the monthly
-        await asyncio.gather(v.download_weekly_futures(), v.download_archived_monthly_futures())
-#        await asyncio.gather(v.download_archived_monthly_futures())
+        await asyncio.gather(v.download_weekly_futures(), v.download_monthly_futures(),v.download_archived_monthly_futures())
 
         # #july-nov 2013 need to be fixed up by removing the first row.
         # cache_dir=vixutil_path/"futures"/"download"/"archive_monthly"
@@ -376,8 +375,13 @@ def read_csv_future_files(vixutil_path):
         cached_skinny_path=vixutil_path/"skinny.pkl"
         cached_skinny_expired_path=vixutil_path/"skinny_settled.pkl"
         print("reading cache")
+
         if cached_skinny_expired_path.exists():
             settled_frames=pd.read_pickle(cached_skinny_expired_path)
+            already_expired=frozenset(settled_frames["File"])
+        else:
+            settled_frames=pd.DataFrame()
+            already_expired=frozenset()
         print("read cache")
 
         monthly_settlement_date_strings=monthly_settlements(mfns)
@@ -462,7 +466,6 @@ def read_csv_future_files(vixutil_path):
         #just read the weeklies, and the montlies prior to 2013.
         #the monthlys are the same as weeklies even though we did download the monthlies a second time we ignore them.
         #   
-        already_expired=frozenset(settled_frames["File"])
         def is_expired(fp):
             test_expired=fp.name in already_expired
             return test_expired
@@ -471,11 +474,12 @@ def read_csv_future_files(vixutil_path):
         #exclude reading the frames already in the cached data frame for futures expired.
         contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns) if not is_expired(p)]
         print("Merging")
+
         futures_frame=pd.concat(itertools.chain([settled_frames],contract_history_frames),ignore_index=True)
         print("Column ordering")
         column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
-       'Open Interest',  'WeekOfYear', 'Year', 'MonthOfYear','Futures',  'File','Expired' ]
+       'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
         futures_frame.sort_values(by=["Trade Date","Settlement Date"])
         futures_frame_ordered_cols=futures_frame[column_order]

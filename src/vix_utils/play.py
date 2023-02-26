@@ -1,10 +1,11 @@
 import pandas as pd
 
 df=pd.read_pickle("C:/Users/doug/AppData/Local/.vixutil/skinny.pkl")
+print(f"df {df}")
 weekly=df[df['Weekly']] 
 monthly=df[df['Weekly'] == False]
 
-monthly.set_index(["Trade Date","MonthTenor"]).unstack()
+#monthly.set_index(["Trade Date","MonthTenor"]).unstack()
                   
 
 #from the old way
