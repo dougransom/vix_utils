@@ -14,7 +14,7 @@ import pandas_market_calendars as mcal
 import calendar as cal
 import pandas as pd
 import more_itertools
-
+import logging
 
 #TODO
 #https://www.cboe.com/us/futures/market_statistics/historical_data/archive/
@@ -198,7 +198,7 @@ class VXFuturesDownloader:
                     #this contract never traded, since we are trying every possible week.
                     #we don't want to download this next time through.
                     blank_csv="Trade Date,Futures,Open,High,Low,Close,Settle,Change,Total Volume,EFP,Open Interest"
-                    print(f"\nfailed url:\n{url}\n${file_with_path}")
+                    
                     await dump_to_file(file_with_path,blank_csv)
                     #force an empty data frame to be saved as well
    
@@ -298,7 +298,7 @@ def read_csv_future_files(vixutil_path):
         wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
         cached_skinny_path=vixutil_path/"skinny.pkl"
         cached_skinny_expired_path=vixutil_path/"skinny_settled.pkl"
-        print("reading cache")
+        logging.debug("reading cache")
 
         if cached_skinny_expired_path.exists():
             settled_frames=pd.read_pickle(cached_skinny_expired_path)
@@ -306,7 +306,7 @@ def read_csv_future_files(vixutil_path):
         else:
             settled_frames=pd.DataFrame()
             already_expired=frozenset()
-        print("read cache")
+        logging.debug("read cache")
 
         monthly_settlement_date_strings=monthly_settlements(mfns)
         def read_csv_future_file(future_path):
@@ -317,7 +317,7 @@ def read_csv_future_files(vixutil_path):
             try:
                 df = pd.read_csv(future_path,parse_dates=[0])
             except Exception as e:
-                print(f"\n {e}\n reading\n{future_path} ")
+                logging.warn(f"\n {e}\n reading\n{future_path} ")
                 raise
             fn=future_path.name
             settlement_date_str=settlement_date_str_from_fn(fn)
@@ -393,14 +393,13 @@ def read_csv_future_files(vixutil_path):
         def is_expired(fp):
             test_expired=fp.name in already_expired
             return test_expired
-        print("Reading")
-        print("now")
+        logging.debug("Reading")
         #exclude reading the frames already in the cached data frame for futures expired.
         contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns) if not is_expired(p)]
-        print("Merging")
+        logging.debug("Merging")
 
         futures_frame=pd.concat(itertools.chain([settled_frames],contract_history_frames),ignore_index=True)
-        print("Column ordering")
+        logging.debug("Column ordering")
         column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
@@ -418,32 +417,31 @@ def load_vix_term_structure():
     
 async def async_load_vix_term_structure():
     global cfe_mcal, valid_days
-    print("Getting Market calendar")
+    logging.debug("Getting Market calendar")
     cfe_mcal =  mcal.get_calendar('CFE')
-    print("Market Calendar Got")
+    logging.debug("Got Market Calendar")
     #valid_days is expensive, so do it once here
     now=dt.datetime.now()
     #get info for futures expiring up to January 1 in six years.
     #no futures currently trade that far out so this should be fine
     five_years_away=dt.datetime(now.year+6,1,1)
 
-    print("Valid days")
+    logging.debug("Valid days")
     valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
-    print("got Valid days")
+    logging.debug("Got Valid days")
 
     user_path = Path(user_data_dir())
     vixutil_path = user_path / ".vixutil"
     vixutil_path.mkdir(exist_ok=True)
     do_download=True
     if do_download:
-        print("Starting download")
+        logging.debug("Starting download futures")
         await download(vixutil_path)
-        print("Download")
+        logging.debug("Downloaded  futures")
     rebuild=True
     if rebuild:
         df=read_csv_future_files(vixutil_path)
  
-    df=pd.read_pickle(vixutil_path/"skinny.pkl")
     return df
 
 if __name__ == "__main__":  

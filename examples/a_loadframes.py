@@ -3,10 +3,19 @@ import vix_utils.download_vix_futures as v
 import vix_utils
 import asyncio as aio
 import vix_utils.vix_cash_term_structure as cash
-vix_futures_history=v.load_vix_term_structure()
+import logging
+import sys
 
-#load it again using asyncio. required if calling from a coroutine. 
+#set up logging
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+#You could do it like this, if you don't have an event loop
+
+#vix_futures_history=v.load_vix_term_structure()
+
+#if you have an event loop (ie. you are using coroutines), use the asyncio options.   
 #get the cash term structure and futures history  
+
 
 async def do_load():
     async with aio.TaskGroup() as tg:
@@ -15,15 +24,17 @@ async def do_load():
 
     return (t1.result(),t2.result())
 
+#create an event loop just for the do_load example
+
 vix_futures_history,vix_cash_history=aio.run(do_load())
 
-print(f"Vix cash history \n{vix_cash_history}")
+print(f"Vix Cash History \n{vix_cash_history}\nVix Cash History index\n{vix_cash_history.columns}")
 #this function same as wide_cash.all_vix_cash.pivot(index='Trade Date', columns="Symbol")
 
 wide_cash=cash.pivot_on_trade_date(vix_cash_history)
-print(f"Wide Vix cash history\n{wide_cash}")
+print(f"Wide Vix Cash history\n{wide_cash}\nWide Cash History Index\n{wide_cash.columns}")
 
-print(f"The entire VIX Futures History:\n{vix_futures_history}")
+print(f"\nThe entire VIX Futures History:\n{vix_futures_history}")
 
 
 
