@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import aiofiles
-from appdirs import user_data_dir,user_log_dir
+from appdirs import user_log_dir
 from pathlib import Path
 import itertools
 from .vix_futures_term_structure import vix_futures_settlement_date_monthly
@@ -15,6 +15,7 @@ import calendar as cal
 import pandas as pd
 import more_itertools
 import logging
+from .location import data_dir,make_dir
 
 #TODO
 #https://www.cboe.com/us/futures/market_statistics/historical_data/archive/
@@ -149,7 +150,7 @@ class VXFuturesDownloader:
         self.futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
         self.futures_data_cache_archive_monthly=data_dir/"futures"/"download"/"archive_monthly"
         for p in (self.futures_data_cache_weekly,self.futures_data_cache_monthly,self.futures_data_cache_archive_monthly):
-            p.mkdir(exist_ok=True,parents=True) 
+            make_dir(p)
  
     async def download_one_monthly_future(self,year,month):
         url,expiry=generate_monthly_url_date(year,month)
@@ -430,9 +431,9 @@ async def async_load_vix_term_structure():
     valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
     logging.debug("Got Valid days")
 
-    user_path = Path(user_data_dir())
-    vixutil_path = user_path / ".vixutil"
-    vixutil_path.mkdir(exist_ok=True)
+    user_path = data_dir()
+    vixutil_path = user_path 
+    make_dir(vixutil_path)
     do_download=True
     if do_download:
         logging.debug("Starting download futures")

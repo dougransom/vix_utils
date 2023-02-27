@@ -7,8 +7,8 @@ import aiohttp
 import asyncio
 import io
 from itertools import chain
-from appdirs import user_data_dir,user_log_dir
-
+from appdirs import user_log_dir
+from .location import data_dir,make_dir
 from pathlib import Path
 
 
@@ -19,12 +19,12 @@ _cboe_indexes = "https://www.cboe.com/index/indexes"
 
 async def get_vix_index_histories():
 
-    data_directory= Path(user_data_dir())
+    data_directory= Path(data_dir())
 
     cash_data_directory=data_directory/"cash"
     download_data_directory=cash_data_directory/"download"
     del data_directory        
-    download_data_directory.mkdir(parents=True,exist_ok=True)
+    make_dir(download_data_directory)
     symbols_with_value_only=['VVIX','GVZ']
 
     symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]

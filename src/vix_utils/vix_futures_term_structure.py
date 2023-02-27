@@ -7,7 +7,7 @@ import numpy as np
 import vix_utils.futures_utils as u
 import quandl as ql
 import logging as logging
-
+from .location import data_dir
 _cfe_calendar = mcal.get_calendar('CFE')
 _now = dt.datetime.now()
 
