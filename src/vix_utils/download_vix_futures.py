@@ -4,7 +4,6 @@ import aiofiles
 from appdirs import user_data_dir,user_log_dir
 from pathlib import Path
 import itertools
-
 from .vix_futures_term_structure import vix_futures_settlement_date_monthly
 from .vix_futures_term_structure import vix_futures_settlement_date_from_trade_date
 

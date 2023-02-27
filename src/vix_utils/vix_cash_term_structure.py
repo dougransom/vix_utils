@@ -7,12 +7,19 @@ import aiohttp
 import asyncio
 import io
 from itertools import chain
+from appdirs import user_data_dir,user_log_dir
+
+from pathlib import Path
+
 
 # use this URL to browse and find the index data
 _cboe_indexes = "https://www.cboe.com/index/indexes"
 
 
-async def get_vix_index_histories(data_directory):
+
+async def get_vix_index_histories():
+
+    data_directory= Path(user_data_dir())
 
     cash_data_directory=data_directory/"cash"
     download_data_directory=cash_data_directory/"download"
@@ -80,8 +87,11 @@ async def get_vix_index_histories(data_directory):
     all_vix_cash['Trade Date'] = pd.to_datetime(all_vix_cash['Trade Date'])
     all_vix_cash.set_index('Trade Date')
     logging.debug(f"\nAll Vix cash \n{all_vix_cash}")
+
+
+    return all_vix_cash 
+
+def pivot_on_trade_date(all_vix_cash):
     all_cash_frame = all_vix_cash.pivot(index='Trade Date', columns="Symbol")
-
     logging.debug(f"stacked \n{all_cash_frame['Close']}")
-
     return all_cash_frame
