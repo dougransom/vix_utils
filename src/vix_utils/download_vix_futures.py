@@ -4,7 +4,10 @@ import aiofiles
 from appdirs import user_data_dir,user_log_dir
 from pathlib import Path
 import itertools
-import vix_utils.vix_futures_term_structure as t
+
+from .vix_futures_term_structure import vix_futures_settlement_date_monthly
+from .vix_futures_term_structure import vix_futures_settlement_date_from_trade_date
+
 import datetime as dt
 import numpy as np
 
@@ -50,8 +53,7 @@ class CBOFuturesDates:
     
 cboe_futures_dates=CBOFuturesDates()
 
-vix_futures_settlement_date_monthly=t.vix_futures_settlement_date_monthly
-vix_futures_settlement_date_from_trade_date=t.vix_futures_settlement_date_from_trade_date
+
 
 #sample weeklky url: https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-06-01.csv  for VX+VXT22/M2
 #wich is also in the file name as CFE_VX_M2.csv
