@@ -27,13 +27,18 @@ async def do_load():
 #create an event loop just for the do_load example
 
 vix_futures_history,vix_cash_history=aio.run(do_load())
+stars='*'*80
+def pstars(): print(stars)
 
+pstars()
 print(f"Vix Cash History \n{vix_cash_history}\nVix Cash History index\n{vix_cash_history.columns}")
 #this function same as wide_cash.all_vix_cash.pivot(index='Trade Date', columns="Symbol")
 
+pstars()
 wide_cash=cash.pivot_on_trade_date(vix_cash_history)
 print(f"Wide Vix Cash history\n{wide_cash}\nWide Cash History Index\n{wide_cash.columns}")
 
+pstars()
 print(f"\nThe entire VIX Futures History:\n{vix_futures_history}")
 
 
@@ -41,11 +46,13 @@ print(f"\nThe entire VIX Futures History:\n{vix_futures_history}")
 #just the monthly
 monthly=vix_futures_history[vix_futures_history['Weekly'] == False]
 
+pstars()
 print(f"Just the monthly futures:\n{monthly}")
 
+pstars()
 pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack()
 pivoted.columns.reorder_levels(order=[1,0])
 pivoted=pivoted[["Close","File"]]
-print(f"The monthlys, with a tenor column index, just a few columns:\n{pivoted}")
-print(f"The column index for the stacked frame above:\n{pivoted.columns}")
+print(f"The monthlys, with a tenor column index, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
 
+pstars()
