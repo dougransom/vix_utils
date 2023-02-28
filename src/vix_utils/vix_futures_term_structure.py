@@ -5,7 +5,7 @@ import calendar as cal
 import datetime as dt
 import numpy as np
 import vix_utils.futures_utils as u
-import quandl as ql
+
 import logging as logging
 from .location import data_dir
 _cfe_calendar = mcal.get_calendar('CFE')
@@ -291,21 +291,7 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
 
     return pivoted
 
-def download_quandle_data(quandl_api_key, data_path, number_of_futures_maturities=9):
-    """
-    This can take awhile, so make it possible to do in a thread.
-    """
-    months = tuple(range(1, 1 + number_of_futures_maturities))
-    ql.ApiConfig.api_key = quandl_api_key
-    # the quandle query strings
-    qc = list((f"CHRIS/CBOE_VX{i}" for i in months))
-    # the data frame for each future month (1m, 2m etc.) from quandl
-    method = ql.get
-    zmvix = zip(months, (method(a) for a in qc))
-    for m, df in zmvix:
-        df.to_pickle(data_path / f"CBOE_VX{m}.pkl")
 
-_quandl_vix_cols_to_clean=["Open", "High", "Low", "Close", "Settle"]
 
 def vix_futures_term_structure(data_path, wide_settlement_calendar, number_of_futures_maturities=9):
     """Load the futures data previously downloaded from quandl for the month 1,...number_of_futures_maturities.

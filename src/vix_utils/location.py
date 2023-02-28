@@ -13,8 +13,6 @@ def override_data_dir(path:Path):
 def data_dir():
     if __override_data_dir__ is None:
         dirs=AppDirs(__package__,"vixutil_co",version=f"v{__version__}")
-        print(f"Package {__package__}")
         user_data_dir=dirs.user_data_dir
-        print(f"User Data Dir {user_data_dir}")
         return Path(user_data_dir)
     return __override_data_dir__
