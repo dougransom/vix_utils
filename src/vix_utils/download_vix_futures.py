@@ -453,7 +453,8 @@ async def async_load_vix_term_structure(forceReload=False):
         _cached_vix_futures_records=await reload_vix_futures_history()
     return _cached_vix_futures_records.copy(deep=True)
     
+def select_monthly(vix_futures_records):
+#just the monthly
+    monthly=vix_futures_records[vix_futures_records['Weekly'] == False]
+    return monthly
 
-
-if __name__ == "__main__":  
-    load_vix_term_structure()

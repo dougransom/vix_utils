@@ -41,7 +41,9 @@ print(f"\nThe entire VIX Futures History:\n{vix_futures_history}")
 
 
 #just the monthly
-monthly=vix_futures_history[vix_futures_history['Weekly'] == False]
+monthly=v.select_monthly(vix_futures_history)
+
+vix_futures_history[vix_futures_history['Weekly'] == False]
 
 pstars()
 print(f"Just the monthly futures:\n{monthly}")
