@@ -11,8 +11,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 stars='*'*80
 def pstars(): print(stars)
 
-
-
 async def do_load():
     async with aio.TaskGroup() as tg:
         t1=tg.create_task(v.async_load_vix_term_structure())
