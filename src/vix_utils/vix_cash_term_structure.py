@@ -92,6 +92,7 @@ async def get_vix_index_histories():
     return all_vix_cash 
 
 def pivot_on_trade_date(all_vix_cash):
+    logging.debug(f"all_vix_cash columns index:  {all_vix_cash.columns}")
     all_cash_frame = all_vix_cash.pivot(index='Trade Date', columns="Symbol")
     logging.debug(f"stacked \n{all_cash_frame['Close']}")
     return all_cash_frame

@@ -8,13 +8,9 @@ import sys
 
 #set up logging
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+stars='*'*80
+def pstars(): print(stars)
 
-#You could do it like this, if you don't have an event loop
-
-#vix_futures_history=v.load_vix_term_structure()
-
-#if you have an event loop (ie. you are using coroutines), use the asyncio options.   
-#get the cash term structure and futures history  
 
 
 async def do_load():
@@ -27,12 +23,13 @@ async def do_load():
 #create an event loop just for the do_load example
 
 vix_futures_history,vix_cash_history=aio.run(do_load())
-stars='*'*80
-def pstars(): print(stars)
 
 pstars()
 print(f"Vix Cash History \n{vix_cash_history}\nVix Cash History index\n{vix_cash_history.columns}")
 #this function same as wide_cash.all_vix_cash.pivot(index='Trade Date', columns="Symbol")
+
+#you can do it this way if you don't have a running event loop (ie. you aren't using asyncio)
+vix_futures_history=v.load_vix_term_structure()
 
 pstars()
 wide_cash=cash.pivot_on_trade_date(vix_cash_history)

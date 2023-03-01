@@ -6,7 +6,7 @@ from pathlib import Path
 import itertools
 from .vix_futures_term_structure import vix_futures_settlement_date_monthly
 from .vix_futures_term_structure import vix_futures_settlement_date_from_trade_date
-
+from .futures_utils import timeit
 import datetime as dt
 import numpy as np
 
@@ -16,9 +16,8 @@ import pandas as pd
 import more_itertools
 import logging
 from .location import data_dir,make_dir
-
-#TODO
-#https://www.cboe.com/us/futures/market_statistics/historical_data/archive/
+_cached_vix_futures_records = None
+ 
 
 def vix_settlements(start_year,end_year):
     j1_start=dt.date(start_year,1,1)
@@ -295,6 +294,7 @@ def pk_path_from_csv_path(csv_path):
     pkl_path=csv_path.with_suffix('.pkl')
     return pkl_path
 
+    
 def read_csv_future_files(vixutil_path):
         wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
         cached_skinny_path=vixutil_path/"skinny.pkl"
@@ -363,10 +363,9 @@ def read_csv_future_files(vixutil_path):
                 settlement_date_py=settlement_date.date()
                 def compare_settlement(s1):
                     return  settlement_date_py <= s1
-#                try:
+
                 (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
- #               except Exception as e:
- #                   pass
+
 
                 month_count=len(settlements_before_final)
                 monthly_tenor.loc[index]=month_count
@@ -413,37 +412,48 @@ def read_csv_future_files(vixutil_path):
 
         return futures_frame_ordered_cols
 
-def load_vix_term_structure():
-    return asyncio.run(async_load_vix_term_structure())
+def load_vix_term_structure(forceReload=False):
+    return asyncio.run(async_load_vix_term_structure(forceReload))
+
+@timeit()    
+async def async_load_vix_term_structure(forceReload=False):
+
+    async def reload_vix_futures_history():
+        global cfe_mcal, valid_days
+        logging.debug("Getting Market calendar")
+        cfe_mcal =  mcal.get_calendar('CFE')
+        logging.debug("Got Market Calendar")
+        #valid_days is expensive, so do it once here
+        now=dt.datetime.now()
+        #get info for futures expiring up to January 1 in six years.
+        #no futures currently trade that far out so this should be fine
+        five_years_away=dt.datetime(now.year+6,1,1)
+
+        logging.debug("Valid days")
+        valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
+        logging.debug("Got Valid days")
+
+        user_path = data_dir()
+        vixutil_path = user_path 
+        make_dir(vixutil_path)
+        do_download=True
+        if do_download:
+            logging.debug("Starting download futures")
+            await download(vixutil_path)
+            logging.debug("Downloaded  futures")
+        rebuild=True
+        if rebuild:
+            df=read_csv_future_files(vixutil_path)
     
-async def async_load_vix_term_structure():
-    global cfe_mcal, valid_days
-    logging.debug("Getting Market calendar")
-    cfe_mcal =  mcal.get_calendar('CFE')
-    logging.debug("Got Market Calendar")
-    #valid_days is expensive, so do it once here
-    now=dt.datetime.now()
-    #get info for futures expiring up to January 1 in six years.
-    #no futures currently trade that far out so this should be fine
-    five_years_away=dt.datetime(now.year+6,1,1)
+        return df
 
-    logging.debug("Valid days")
-    valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
-    logging.debug("Got Valid days")
+    global _cached_vix_futures_records
 
-    user_path = data_dir()
-    vixutil_path = user_path 
-    make_dir(vixutil_path)
-    do_download=True
-    if do_download:
-        logging.debug("Starting download futures")
-        await download(vixutil_path)
-        logging.debug("Downloaded  futures")
-    rebuild=True
-    if rebuild:
-        df=read_csv_future_files(vixutil_path)
- 
-    return df
+    if forceReload or _cached_vix_futures_records is None:
+        _cached_vix_futures_records=await reload_vix_futures_history()
+    return _cached_vix_futures_records.copy(deep=True)
+    
+
 
 if __name__ == "__main__":  
     load_vix_term_structure()
