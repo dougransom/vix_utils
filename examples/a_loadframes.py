@@ -49,9 +49,8 @@ pstars()
 print(f"Just the monthly futures:\n{monthly}")
 
 pstars()
-pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack()
-pivoted.columns.reorder_levels(order=[1,0])
-pivoted=pivoted[["Close","File"]]
+pivoted= v.pivot_on_monthly_tenor(monthly)
+pivoted=pivoted[['Close','File']]
 print(f"The monthlys, with a tenor column index, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
 
 pstars()

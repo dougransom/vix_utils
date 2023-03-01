@@ -458,3 +458,8 @@ def select_monthly(vix_futures_records):
     monthly=vix_futures_records[vix_futures_records['Weekly'] == False]
     return monthly
 
+def pivot_on_monthly_tenor(vix_monthly_futures_records):
+    monthly=vix_monthly_futures_records
+    pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack()
+    pivoted.columns.reorder_levels(order=[1,0])
+    return pivoted
