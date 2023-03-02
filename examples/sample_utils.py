@@ -1,2 +1,4 @@
 stars='*'*80
-def pstars(): print(stars)
+def pstars():
+    """Print a line of '*' """ 
+    print(stars)
