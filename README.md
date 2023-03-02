@@ -6,9 +6,9 @@
 Currently, only the functions to download the vix futures and cash term structures work.
 Look in the examples directory, a_loadframes as there is no documentation on how to call them at this time.
 
-The  virtual 30 day future used by VXX and the SVXSTR index are not working yet.
+The  virtual 30 day future used by VXX and the SVXSTR index are not working yet. Skip down to [installation](#installation). 
 ~~~
-
+TODO this is not working.
 It provides a command line program that:
 
 * generates a mapping of trade dates to the next settlement date for each vix future maturity.
