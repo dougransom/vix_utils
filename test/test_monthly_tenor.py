@@ -1,6 +1,6 @@
 import pytest
 import typing
-from vix_utils.vix_futures_term_structure import  vix_futures_settlement_date_from_trade_date
+from vix_utils.vix_futures_dates import  vix_futures_settlement_date_from_trade_date
 import datetime as dt
 from  functools import partial
 from . import fiso

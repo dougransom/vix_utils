@@ -4,8 +4,8 @@ import aiofiles
 from appdirs import user_log_dir
 from pathlib import Path
 import itertools
-from .vix_futures_term_structure import vix_futures_settlement_date_monthly
-from .vix_futures_term_structure import vix_futures_settlement_date_from_trade_date
+from .vix_futures_dates import vix_futures_settlement_date_monthly
+from .vix_futures_dates import vix_futures_settlement_date_from_trade_date
 from .futures_utils import timeit
 import datetime as dt
 import numpy as np
@@ -456,12 +456,12 @@ async def async_load_vix_term_structure(forceReload=False):
         _cached_vix_futures_records=await reload_vix_futures_history()
     return _cached_vix_futures_records.copy(deep=True)
     
-def select_monthly(vix_futures_records):
+def select_monthly_futures(vix_futures_records):
 #just the monthly
     monthly=vix_futures_records[vix_futures_records['Weekly'] == False]
     return monthly
 
-def pivot_on_monthly_tenor(vix_monthly_futures_records):
+def pivot_futures_on_monthly_tenor(vix_monthly_futures_records):
     monthly=vix_monthly_futures_records
     pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack()
     pivoted.columns.reorder_levels(order=[1,0])

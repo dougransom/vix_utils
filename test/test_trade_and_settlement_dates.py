@@ -1,5 +1,5 @@
 import pytest
-from vix_utils.vix_futures_term_structure import vix_futures_trade_dates_and_settlement_dates
+from vix_utils.vix_futures_dates import vix_futures_trade_dates_and_settlement_dates
 import pandas as pd
 
 trade_and_settle_df=pytest.fixture(vix_futures_trade_dates_and_settlement_dates)

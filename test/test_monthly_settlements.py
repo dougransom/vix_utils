@@ -1,6 +1,6 @@
 import pytest
 
-from vix_utils.vix_futures_term_structure import vix_futures_settlement_date_monthly
+from vix_utils  import vix_futures_settlement_date_monthly
 
 from . import fiso
 

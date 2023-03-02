@@ -291,45 +291,5 @@ def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_st
 
     return pivoted
 
-
-
-def vix_futures_term_structure(data_path, wide_settlement_calendar, number_of_futures_maturities=9):
-    """Load the futures data previously downloaded from quandl for the month 1,...number_of_futures_maturities.
-    Joint to the wide settlement calendar from vix_futures_trade_dates_and_settlement_dates
-    """
-
-    def add_columns_and_clean_zeros(df, maturity):
-        """Add the Contract Month """
-        df["Contract Month"] = maturity
-        for col in _quandl_vix_cols_to_clean:
-            mask = df[col]==0
-            ii = df[mask].index
-            if ii.size > 0:
-                logging.log(logging.INFO,f"Cleaning zeros: month {maturity} col {col} dates {ii}")
-            df.loc[mask,col]=df.loc[mask,"Settle"]
-        return df
-
-
-    months = tuple(range(1, 1 + number_of_futures_maturities))
-    # the file namaes
-
-    qc = list((data_path / f"CBOE_VX{i}.pkl" for i in months))
-    method = pd.read_pickle
-
-    zmvix = zip(months, (method(a) for a in qc))
-    # add in the Maturity month columns
-    zmvix1 = list(add_columns_and_clean_zeros(df, m) for m, df in zmvix)
-    # bring them all together into a dataframe
-    vix_all_months = u.timeit()(pd.concat)(zmvix1)
-
-    # pivot the data so that it can be indexed by TradeDate and ContractMonth
-    cols = vix_all_months.columns
-    unstacked = pivot_on_contract_maturity(vix_all_months)
-
-
-    # inner join it to the settlement calendar
-    unstacked_with_cal = pd.merge(unstacked, wide_settlement_calendar, right_index=True, left_index=True)
-
-    # filter out data before 2008 as it seems to be glitchy
-    filtered = unstacked_with_cal['2008-01-01':]
-    return filtered
+ 
+    
