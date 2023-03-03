@@ -17,7 +17,7 @@ import more_itertools
 import logging
 from .location import data_dir,make_dir
 _cached_vix_futures_records = None
- 
+_date_cols=["Trade Date","Settlement Date"]
 
 def vix_settlements(start_year,end_year):
     j1_start=dt.date(start_year,1,1)
@@ -404,7 +404,9 @@ def read_csv_future_files(vixutil_path):
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
-        futures_frame.sort_values(by=["Trade Date","Settlement Date"])
+
+        futures_frame.sort_values(by=_date_cols)
+ 
         futures_frame_ordered_cols=futures_frame[column_order]
         futures_frame_expired=futures_frame_ordered_cols[futures_frame_ordered_cols["Expired"]==True]
         for df,p in ((futures_frame_ordered_cols,cached_skinny_path), (futures_frame_expired,cached_skinny_expired_path)): 
@@ -447,14 +449,22 @@ async def async_load_vix_term_structure(forceReload=False):
         rebuild=True
         if rebuild:
             df=read_csv_future_files(vixutil_path)
-    
+        #remove the timezone info
+
         return df
 
     global _cached_vix_futures_records
 
     if forceReload or _cached_vix_futures_records is None:
         _cached_vix_futures_records=await reload_vix_futures_history()
-    return _cached_vix_futures_records.copy(deep=True)
+ 
+    futures_frame=_cached_vix_futures_records.copy(deep=True)
+    #remove localizatoin
+
+    for d in _date_cols:
+        futures_frame[d]=futures_frame[d].dt.tz_localize(None) 
+
+    return futures_frame
     
 def select_monthly_futures(vix_futures_records):
 #just the monthly
@@ -463,6 +473,6 @@ def select_monthly_futures(vix_futures_records):
 
 def pivot_futures_on_monthly_tenor(vix_monthly_futures_records):
     monthly=vix_monthly_futures_records
-    pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack()
-    pivoted.columns.reorder_levels(order=[1,0])
+    pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack().swaplevel(0,1,axis=1)
+
     return pivoted

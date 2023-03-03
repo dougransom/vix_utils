@@ -252,8 +252,8 @@ def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9)
     # print(f"unstacked: \{unstacked}")
     return unstacked
 
-
-def vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_structure):
+#todo delete this
+def deleteme_vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_structure):
     """Returns a constant maturity in months for the vix futures term structure by interpolating
     between the two months.
     https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview
