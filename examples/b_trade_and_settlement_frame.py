@@ -42,13 +42,8 @@ def do_weight(weight_column_name,tenor):
         v=tenor_df.apply(weight_fn)
         return v
 
-_weights_and_tenors_vix_front_months=[('Front Month Weight',1), ('Next Month Weight',2)]
 
-def do_weighting_front_two_months():
-    return do_weighting_months(_weights_and_tenors_vix_front_months)
 
-def do_weighting_months(weights_and_tenors):
-    return sum(do_weight(n,t) for n,t in weights_and_tenors )
       
 
 #weighted_values=reduce(add,do_weighting())
