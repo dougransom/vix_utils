@@ -54,3 +54,5 @@ pivoted=pivoted[['Close','File']]
 print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
 
 pstars()
+m1m2_weighted=v.continous_maturity_30day()
+print(f"\nm1m2 weighted:\n{m1m2_weighted}")
