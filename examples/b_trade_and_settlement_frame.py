@@ -35,16 +35,25 @@ pstars()
 #can't multiply a dataframe by a series, we have to do it by column
 weighted_values=pd.DataFrame()
 
-def do_weighting():
-    for weight_name,tenor in ( ('Front Month Weight',1), ('Next Month Weight',2)):
-        w=weights[weight_name]
+def do_weight(weight_column_name,tenor):
+        w=weights[weight_column_name]
         weight_fn=partial(mul,w)
         tenor_df=futures_history_trade_value_columns[tenor]
         v=tenor_df.apply(weight_fn)
-        yield v
- 
+        return v
 
-weighted_values=reduce(add,do_weighting())
- 
+_weights_and_tenors_vix_front_months=[('Front Month Weight',1), ('Next Month Weight',2)]
 
+def do_weighting_front_two_months():
+    return do_weighting_months(_weights_and_tenors_vix_front_months)
+
+def do_weighting_months(weights_and_tenors):
+    return sum(do_weight(n,t) for n,t in weights_and_tenors )
+      
+
+#weighted_values=reduce(add,do_weighting())
+weighted_values=do_weighting_front_two_months()
+
+w=weighted_values 
+fcv=futures_history_trade_value_columns
  
