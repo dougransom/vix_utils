@@ -1,5 +1,6 @@
 import pandas as pd
-
+from functools import partial,reduce
+from operator import add,mul
 from sample_utils import pstars
 from  vix_utils   import \
     vix_futures_trade_dates_and_settlement_dates as trade_and_settle, vix_constant_maturity_weights, load_vix_term_structure,\
@@ -20,7 +21,30 @@ futures_history=select_monthly_futures(load_vix_term_structure())
 pstars()
 print(f"\nPivoting")
 futures_history_by_tenor=pivot_futures_on_monthly_tenor(futures_history)
+#the security values that we can combine to make a constant maturity 
+#  
+weighted_column_names=['Open','High','Low','Close','Settle','Change']
 
-front_two_months=futures_history_by_tenor[[1,2]]
-m1=front_two_months[1]
-m2=front_two_months[2]
+
+#select the front two months and the columns that have trade values
+futures_history_trade_value_columns=futures_history_by_tenor[[1,2]].swaplevel(axis=1)[weighted_column_names].swaplevel(axis=1) 
+
+print(f"\nfutures_history_trade_value_columns:\n{futures_history_trade_value_columns}")
+pstars()
+
+#can't multiply a dataframe by a series, we have to do it by column
+weighted_values=pd.DataFrame()
+
+def do_weighting():
+    for weight_name,tenor in ( ('Front Month Weight',1), ('Next Month Weight',2)):
+        w=weights[weight_name]
+        weight_fn=partial(mul,w)
+        tenor_df=futures_history_trade_value_columns[tenor]
+        v=tenor_df.apply(weight_fn)
+        yield v
+ 
+
+weighted_values=reduce(add,do_weighting())
+ 
+
+ 

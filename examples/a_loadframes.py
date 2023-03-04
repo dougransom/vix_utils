@@ -47,7 +47,10 @@ print(f"Just the monthly futures:\n{monthly}")
 
 pstars()
 pivoted= v.pivot_futures_on_monthly_tenor(monthly)
+print(f"\npivoted {pivoted}")
+pivoted=pivoted.swaplevel(0,1,axis=1)
+
 pivoted=pivoted[['Close','File']]
-print(f"The monthlys, with a tenor column index, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
+print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
 
 pstars()
