@@ -18,6 +18,7 @@ import logging
 from .location import data_dir,make_dir
 _cached_vix_futures_records = None
 _date_cols=["Trade Date","Settlement Date"]
+_duplicate_check_subset=['Trade Date','Settlement Date']
 
 def vix_settlements(start_year,end_year):
     j1_start=dt.date(start_year,1,1)
@@ -308,8 +309,10 @@ def read_csv_future_files(vixutil_path):
             settled_frames=pd.DataFrame()
             already_expired=frozenset()
         logging.debug("read cache")
+        #we use the downloaded file names as a list of the settlement dates.
+        #it might be smarter to use the vix settlments dates instead
 
-        monthly_settlement_date_strings=monthly_settlements(mfns)
+        monthly_settlement_date_strings=monthly_settlements(itertools.chain(mfns,amfns))
         def read_csv_future_file(future_path):
             future_pkl_path=pk_path_from_csv_path(future_path)
             if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
@@ -404,11 +407,15 @@ def read_csv_future_files(vixutil_path):
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
-
-        futures_frame.sort_values(by=_date_cols)
- 
-        futures_frame_ordered_cols=futures_frame[column_order]
+        futures_frame_ordered_cols=futures_frame.sort_values(by=_date_cols)[column_order]
         futures_frame_expired=futures_frame_ordered_cols[futures_frame_ordered_cols["Expired"]==True]
+        #we have seen duplicates in the downloaded data.
+        #for example, FEb 27 and Feb 28 trade dates, duplicated for the 2020-03-25 settlement.
+        duplicated=futures_frame_ordered_cols[futures_frame_ordered_cols.duplicated(subset=_duplicate_check_subset,keep=False)]
+        if duplicated.shape[0] > 0:
+            logging.debug(f"\nDuplicates detected\n{duplicated}, cleaning them out")
+            futures_frame_ordered_cols.drop_duplicates(inplace=True,subset=_duplicate_check_subset)
+
         for df,p in ((futures_frame_ordered_cols,cached_skinny_path), (futures_frame_expired,cached_skinny_expired_path)): 
             df.to_pickle(p)
 
