@@ -23,11 +23,11 @@ print(f"\nPivoting")
 futures_history_by_tenor=pivot_futures_on_monthly_tenor(futures_history)
 #the security values that we can combine to make a constant maturity 
 #  
-weighted_column_names=['Open','High','Low','Close','Settle','Change']
+_weighted_column_names=['Open','High','Low','Close','Settle','Change']
 
 
 #select the front two months and the columns that have trade values
-futures_history_trade_value_columns=futures_history_by_tenor[[1,2]].swaplevel(axis=1)[weighted_column_names].swaplevel(axis=1) 
+futures_history_trade_value_columns=futures_history_by_tenor[[1,2]].swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1) 
 
 print(f"\nfutures_history_trade_value_columns:\n{futures_history_trade_value_columns}")
 pstars()
