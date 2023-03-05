@@ -84,4 +84,5 @@ Here is a sample plot:
 ![Sample Term Structure](./sample_term_structure.png "A sample term structure").
 
 ~~~
-
+## Developing
+https://numpydoc.readthedocs.io/en/latest/format.html
