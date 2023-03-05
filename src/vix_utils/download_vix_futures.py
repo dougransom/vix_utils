@@ -338,6 +338,10 @@ def read_csv_future_files(vixutil_path):
             df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
             df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
 
+            #remove any errenous rows with an entry later than the expiry day.
+            #there are a few of these  in 2004-2005.
+            df=df[df["Days to Settlement"]>=0]
+
             trade_dates = df['Trade Date']
             trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
             monthly_tenor=pd.Series(index=df.index,dtype='int32')
@@ -480,6 +484,10 @@ def select_monthly_futures(vix_futures_records):
 
 def pivot_futures_on_monthly_tenor(vix_monthly_futures_records):
     monthly=vix_monthly_futures_records
+    dups=monthly[monthly.index.duplicated(keep=False)]
+    if dups.shape()[0]>0:
+        logging.debug(f"Duplicates in index:\n{dups}")
+    
     pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack().swaplevel(0,1,axis=1)
 
     return pivoted

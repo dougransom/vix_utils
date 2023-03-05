@@ -39,14 +39,13 @@ print(f"\nThe entire VIX Futures History:\n{vix_futures_history}")
 
 #just the monthly
 monthly=v.select_monthly_futures(vix_futures_history)
-
-vix_futures_history[vix_futures_history['Weekly'] == False]
+ 
 
 pstars()
 print(f"Just the monthly futures:\n{monthly}")
 
 pstars()
-pivoted= v.pivot_futures_on_monthly_tenor(monthly)
+""" pivoted= v.pivot_futures_on_monthly_tenor(monthly)
 print(f"\npivoted {pivoted}")
 pivoted=pivoted.swaplevel(0,1,axis=1)
 
@@ -55,4 +54,4 @@ print(f"The monthlys, with a tenor column index, levels swapped, just a few colu
 
 pstars()
 m1m2_weighted=v.continous_maturity_30day()
-print(f"\nm1m2 weighted:\n{m1m2_weighted}")
+print(f"\nm1m2 weighted:\n{m1m2_weighted}") """
