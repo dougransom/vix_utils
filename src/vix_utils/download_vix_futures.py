@@ -16,11 +16,14 @@ import pandas as pd
 import more_itertools
 import logging
 from .location import data_dir,make_dir
+from collections.abc import Generator
 _cached_vix_futures_records = None
 _date_cols=["Trade Date","Settlement Date"]
 _duplicate_check_subset=['Trade Date','Settlement Date']
 
-def vix_settlements(start_year,end_year):
+def vix_settlements(start_year:int,end_year:int) ->Generator[dt.date,None,None]:
+    """make an iterator that yields the possible settlments for every week.  we assume every tuesday and 
+    wedensday can be a settlement.  """
     j1_start=dt.date(start_year,1,1)
     dayofweek=j1_start.weekday()
     one_week=dt.timedelta(days=7)
@@ -80,9 +83,9 @@ _futures_month_numbers=list(range(1,len(_futures_month_strings)+1))
 
 _futures_months_and_codes = list(zip(_futures_months_code,_futures_month_strings,_futures_month_numbers))
 
-def start_year():
+def start_year()->int:
         return 2013
-def stop_year():
+def stop_year()->int:
     now = dt.datetime.now()
     return now.year+2
 
@@ -104,15 +107,32 @@ def years_and_weeks():
     end_year=now.year+2
     return itertools.product( range(2011,end_year),range(1,53))
 
-def generate_settlement_url(date_str):
+def generate_settlement_url(date_str:str) -> str:
     return  f"https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_{date_str}.csv"
 
-def generate_monthly_url_date(year,month):
+def generate_monthly_url_date(year:int,month:int) -> tuple[str,str]:
+    """ Returns the URL and a date string for the expiry date used to build the url.
+    parameters:
+    -----------
+    year: year of expiry
+    month: month of expiry
+
+    """
     settlement_date=vix_futures_settlement_date_monthly(year,month)
     settlement_date_str=settlement_date.isoformat()[:10]
     url=generate_settlement_url(settlement_date_str)    
     return url,settlement_date_str
-def generate_archived_url_date(year,month):
+
+def generate_archived_url_date(year,month) -> tuple[str,str]:
+    """ Returns the URL and a date string for the expiry date used to build the url for 
+    `CBOE Archive data<https://www.cboe.com/us/futures/market_statistics/historical_data/archive/>`_ from 2004-2013.  
+    parameters:
+    -----------
+    year: year of expiry
+    month: month of expiry
+
+    """
+
     code=_futures_months_code[month-1]
     settlement_date=vix_futures_settlement_date_monthly(year,month)
     settlement_date_str=settlement_date.isoformat()[:10]
@@ -121,16 +141,20 @@ def generate_archived_url_date(year,month):
     return url, settlement_date_str
 
 def generate_monthly_url_dates():
+     """
+     Returns  the possible monthly urls and the date strings for all years and months in the default range.
+     """
      return (generate_monthly_url_date(y,m) for y,m in years_and_months)
 
 def generate_weekly_url_date(date):
-    """returns two possibilities"""
     date_str=date.isoformat()[0:10]
     url=generate_settlement_url(date_str)
  
     return date_str,url
 
 async def dump_to_file(fn,data):
+        """
+        """
         try:
             async with aiofiles.open(fn,mode="wb") as f:
                 await f.write(data)
@@ -152,14 +176,20 @@ class VXFuturesDownloader:
         for p in (self.futures_data_cache_weekly,self.futures_data_cache_monthly,self.futures_data_cache_archive_monthly):
             make_dir(p)
  
-    async def download_one_monthly_future(self,year,month):
+    async def download_one_monthly_future(self,year:int,month:int):
+        """
+        Download a monthly future from CBOE, 2013+        
+        """
         url,expiry=generate_monthly_url_date(year,month)
         tag=f"m_{month}"
         save_path=self.futures_data_cache_monthly
         save_fn=f"{expiry}.m_{month}.CFE_VX_{year}.csv"        
         return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
     
-    async def download_one_archived_monthly_future(self, year, month):
+    async def download_one_archived_monthly_future(self, year:int, month:int):
+        """
+        Download a future from the CBOE 'archive' data (2004-2013)
+        """
         url,expiry=generate_archived_url_date(year,month)
         code=_futures_months_code[month-1]
         tag=f"m_{month}"
@@ -169,7 +199,10 @@ class VXFuturesDownloader:
  
 
     
-    async def download_one_weekly_future(self,date):
+    async def download_one_weekly_future(self,date:dt.datetime):
+        """
+        Download a weekly future from CBOE
+        """
         expiry,url=generate_weekly_url_date(date)
 
         tag=f"w_"  #we don't know the week #
@@ -180,7 +213,7 @@ class VXFuturesDownloader:
         await self.download_one_future(save_path,url,tag,expiry,save_fn)
  
     
-    async def download_one_future(self,save_path,url,tag,expiry,fn):
+    async def download_one_future(self,save_path:Path,url:str,tag:str,expiry:str,fn:str):
         ##Contract tag is a string to be stuck after the file name.  saved file will be
         #settlementdate.tag.{name from cboe}.
         #tag can be used to put in month or week.
