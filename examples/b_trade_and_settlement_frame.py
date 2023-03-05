@@ -47,8 +47,7 @@ def do_weight(weight_column_name,tenor):
       
 
 #weighted_values=reduce(add,do_weighting())
-weighted_values=do_weighting_front_two_months()
-
+ 
 w=weighted_values 
 fcv=futures_history_trade_value_columns
  
