@@ -405,7 +405,7 @@ def read_csv_future_files(vixutil_path):
         #for example, FEb 27 and Feb 28 trade dates, duplicated for the 2020-03-25 settlement.
         duplicated=futures_frame_ordered_cols[futures_frame_ordered_cols.duplicated(subset=_duplicate_check_subset,keep=False)]
         if duplicated.shape[0] > 0:
-            logging.debug(f"\nDuplicates detected\n{duplicated}, cleaning them out")
+            logging.warning(f"\nDuplicates detected\n{duplicated}, cleaning them out")
             futures_frame_ordered_cols.drop_duplicates(inplace=True,subset=_duplicate_check_subset)
 
         for df,p in ((futures_frame_ordered_cols,cached_skinny_path), (futures_frame_expired,cached_skinny_expired_path)): 
@@ -473,8 +473,8 @@ def select_monthly_futures(vix_futures_records):
 def pivot_futures_on_monthly_tenor(vix_monthly_futures_records):
     monthly=vix_monthly_futures_records
     dups=monthly[monthly.index.duplicated(keep=False)]
-    if dups.shape()[0]>0:
-        logging.debug(f"Duplicates in index:\n{dups}")
+    if dups.shape[0]>0:
+        logging.warn(f"Duplicates in index:\n{dups}")
     
     pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack().swaplevel(0,1,axis=1)
 

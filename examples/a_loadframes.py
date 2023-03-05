@@ -7,7 +7,7 @@ import logging
 import sys
 from sample_utils import pstars
 #set up logging
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.WARN)
 
 
 async def do_load():
@@ -45,7 +45,7 @@ pstars()
 print(f"Just the monthly futures:\n{monthly}")
 
 pstars()
-""" pivoted= v.pivot_futures_on_monthly_tenor(monthly)
+pivoted= v.pivot_futures_on_monthly_tenor(monthly)
 print(f"\npivoted {pivoted}")
 pivoted=pivoted.swaplevel(0,1,axis=1)
 
@@ -53,5 +53,5 @@ pivoted=pivoted[['Close','File']]
 print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
 
 pstars()
-m1m2_weighted=v.continous_maturity_30day()
-print(f"\nm1m2 weighted:\n{m1m2_weighted}") """
+m1m2_weighted=v.continuous_maturity_30day(monthly)
+print(f"\nm1m2 weighted:\n{m1m2_weighted}")

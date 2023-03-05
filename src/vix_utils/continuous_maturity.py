@@ -33,10 +33,13 @@ _weights_and_tenors_vix_front_months=[('Front Month Weight',1), ('Next Month Wei
 def do_weighting_front_two_months(trades_df,weight_df):
     return do_weighting_months(trades_df,weight_df,_weights_and_tenors_vix_front_months)
 
-def continous_maturity_30day():    
+def continuous_maturity_30day(monthly_records):    
     df=vix_futures_trade_dates_and_settlement_dates()
-    print(f"Data frame of Trade and Settlment Dates\n{df}\ncolumns index:\n{df.columns}")
-    futures_history=select_monthly_futures(load_vix_term_structure())
+    #bail if caller included weekly settlements
+    weekly=monthly_records[monthly_records['Weekly'] == True]
+    assert weekly.shape[0]==0,  "monthly_records must not contain weeklies, filter with select_monthly_futures(...)"
+
+    futures_history=monthly_records
     futures_history_indexed_by_date=futures_history.set_index('Trade Date')
     futures_history_by_tenor=pivot_futures_on_monthly_tenor(futures_history)
 
