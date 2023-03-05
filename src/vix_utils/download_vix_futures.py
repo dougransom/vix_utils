@@ -255,18 +255,6 @@ async def download(vixutil_path):
         #skip the monthly
         await asyncio.gather(v.download_weekly_futures(), v.download_monthly_futures(),v.download_archived_monthly_futures())
 
-        # #july-nov 2013 need to be fixed up by removing the first row.
-        # cache_dir=vixutil_path/"futures"/"download"/"archive_monthly"
-        # to_fix=[
-        # "2013-07-17.m_7.CFE_VX_N2013.csv",
-        # "2013-08-21.m_8.CFE_VX_Q2013.csv",
-        # "2013-10-16.m_10.CFE_VX_V2013.csv",
-        # "2013-11-20.m_11.CFE_VX_X2013.csv"]
-        # for fn in to_fix:
-        #     with open(fn,'r') as fin:
-        #         data=fin.read().splitlines(True)
-        #     with open(fn, 'w') as fout:
-        #         fout.writelines(data[1:])
 
         #need to find lines with a trailing "," and remove it.  There are a bunch in the 
         #archived data
