@@ -147,6 +147,10 @@ def generate_monthly_url_dates():
      return (generate_monthly_url_date(y,m) for y,m in years_and_months)
 
 def generate_weekly_url_date(date):
+    """
+    Returns the URL for the pattern of CBO to retreive the vix future expiring on date, even
+    if no futures expired on date (which would give an URL to a non-existant resource)
+    """
     date_str=date.isoformat()[0:10]
     url=generate_settlement_url(date_str)
  
@@ -154,6 +158,11 @@ def generate_weekly_url_date(date):
 
 async def dump_to_file(fn,data):
         """
+        Save data to a file.
+        parameters:
+        ===========
+        fn:  file name, which can be a string or path like object.
+        data:  the data to write to the file.  can be binary or text.
         """
         try:
             async with aiofiles.open(fn,mode="wb") as f:
@@ -178,46 +187,57 @@ class VXFuturesDownloader:
  
     async def download_one_monthly_future(self,year:int,month:int):
         """
-        Download a monthly future from CBOE, 2013+        
+        Download a monthly future from CBOE, 2013+.
+        parameters:
+        year:
+        month:        
         """
         url,expiry=generate_monthly_url_date(year,month)
-        tag=f"m_{month}"
         save_path=self.futures_data_cache_monthly
         save_fn=f"{expiry}.m_{month}.CFE_VX_{year}.csv"        
-        return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
+        return await self.download_one_future(save_path,url,expiry,fn=save_fn)
     
     async def download_one_archived_monthly_future(self, year:int, month:int):
         """
         Download a future from the CBOE 'archive' data (2004-2013)
+        parameters:
+        year:
+        month:        
         """
         url,expiry=generate_archived_url_date(year,month)
         code=_futures_months_code[month-1]
-        tag=f"m_{month}"
         save_path=self.futures_data_cache_archive_monthly
         save_fn=f"{expiry}.m_{month}.CFE_VX_{code}{year}.csv"
-        return await self.download_one_future(save_path,url,tag,expiry,fn=save_fn)
+        return await self.download_one_future(save_path,url,expiry,fn=save_fn)
  
 
     
     async def download_one_weekly_future(self,date:dt.datetime):
         """
-        Download a weekly future from CBOE
+        Download a weekly future from CBOE for the date.  Save a dummy CSV file with no
+        records if it doesn't exist.
+        parameters:
+        -----------
+        date: date of futures expiry
         """
         expiry,url=generate_weekly_url_date(date)
 
-        tag=f"w_"  #we don't know the week #
         save_path=self.futures_data_cache_weekly
         year=date.year
 
         save_fn=f"{expiry}.w_.CFE_VX_{year}.csv"
-        await self.download_one_future(save_path,url,tag,expiry,save_fn)
+        await self.download_one_future(save_path,url,expiry,save_fn)
  
     
-    async def download_one_future(self,save_path:Path,url:str,tag:str,expiry:str,fn:str):
-        ##Contract tag is a string to be stuck after the file name.  saved file will be
-        #settlementdate.tag.{name from cboe}.
-        #tag can be used to put in month or week.
-
+    async def download_one_future(self,save_path:Path,url:str,expiry:str,fn:str):
+        """
+        Download one future and save it to path specfied.  
+        parameters:
+        ----------_
+        save_path:  path to where the file will be saved.
+        expiry: expiry of the future in string format
+        fn:  file name to be tacked on to save_path before writing the CSV
+        """
         file_to_save=fn
         file_with_path=save_path/file_to_save
         pk_path=pk_path_from_csv_path(file_with_path)
@@ -269,8 +289,9 @@ class VXFuturesDownloader:
 
         return text     
 
-def downloaded_file_paths(data_dir):
+def downloaded_file_paths(data_dir:Path)->tuple[Path,Path,Path]:
         """ returns a tuple (weekly,monthly,archive_monthly) list of Path objects
+            where weekly,monthly, and archive_monthly (2013 and earlier) downloads are stored.
         """
         a=futures_data_cache_weekly=data_dir/"futures"/"download"/"weekly"
         b=futures_data_cache_monthly=data_dir/"futures"/"download"/"monthly"
@@ -281,7 +302,15 @@ def downloaded_file_paths(data_dir):
 
         return folders_contents  
 
-async def download(vixutil_path):
+async def download(vixutil_path:Path):
+    """
+    Download the vix futures historis we don't have up todate.
+    Fixup broken files.
+    parameters:
+    -----------
+    vixutil_path.   Root of where information is cached, like previously downloaded or generated files.
+
+    """
     async with aiohttp.ClientSession() as session:
  
         v=VXFuturesDownloader(vixutil_path,session)
@@ -303,21 +332,46 @@ async def download(vixutil_path):
 
 
 
-def settlement_date_str_from_fn(fn):
+def settlement_date_str_from_fn(fn:str)->str:
+    """
+    get the settlement date from the file name.
+    parameters:
+    -----------
+    fn: file name (without the path)   
+
+    """
     return fn[:10]      # the leading iso date is 10 long
 
-def monthly_settlements(monthly_paths):
+def monthly_settlements(monthly_paths)->frozenset[str]:
+    """
+    return all the settlement dates (as strings) that are in the downloaded monthly futures. 
+    """
     return frozenset(settlement_date_str_from_fn(p.name) for p in monthly_paths)
 
-def week_number_from_fn(fn):
-    return int(fn.split('.')[1].split("_")[1])
+def week_number_from_fn(filename:str)->int:
+    """
+    get the week number from the file name.
+    filename:  the name of a file downloaded and saved.
+    """
+    return int(filename.split('.')[1].split("_")[1])
 
-def pk_path_from_csv_path(csv_path):
+def pk_path_from_csv_path(csv_path:Path)->Path:
+    """
+    returns a path for a pickle (.pkl) file corresponding to a csv file.
+    parameters:
+    -----------
+    csv_path.  Path to a csv file
+    """
     pkl_path=csv_path.with_suffix('.pkl')
     return pkl_path
 
     
-def read_csv_future_files(vixutil_path):
+def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
+        """
+        read the downloaded files into data frames.
+        read the cached data frames from previous runs of this function.
+        return a DataFrame of all vix futures history records, in a skinny (record) format.
+        """
         wfns,mfns,amfns=downloaded_file_paths(vixutil_path)
         cached_skinny_path=vixutil_path/"skinny.pkl"
         cached_skinny_expired_path=vixutil_path/"skinny_settled.pkl"
@@ -334,7 +388,13 @@ def read_csv_future_files(vixutil_path):
         #it might be smarter to use the vix settlments dates instead
 
         monthly_settlement_date_strings=monthly_settlements(itertools.chain(mfns,amfns))
-        def read_csv_future_file(future_path):
+        def read_csv_future_file(future_path:Path)->pd.DataFrame:
+            """
+            Read the csv file in to a data frame, add in the monthly tenor and some calulated columns.
+            parameters:
+            -----------
+            future_path:   the path to the file to load.
+            """
             future_pkl_path=pk_path_from_csv_path(future_path)
             if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
                 return pd.read_pickle(future_pkl_path)
@@ -450,12 +510,42 @@ def read_csv_future_files(vixutil_path):
 
 
 def load_vix_term_structure(forceReload=False):
+    """
+    returns the vix futures history in skinny (record) format.  This will return a copy
+    of the last dataframe returned by load_vix_term_structure retained in memory unless forceReload
+    is specified.
+    Note that this is meant to be called from programs which don't have an event loop.  Use async_load_vix_term_structure
+    if you have an event loop.
+
+    parameters:
+    -----------
+    forceReload: specify that the DataFrame should be rebuilt, rather than using the DataFrame cached in memory from the 
+    last call, if one exists.
+
+    """
     return asyncio.run(async_load_vix_term_structure(forceReload))
 
 @timeit()    
-async def async_load_vix_term_structure(forceReload=False):
+async def async_load_vix_term_structure(forceReload=False)->pd.DataFrame:
+    """
+    returns the vix futures history in skinny (record) format.  This will return a copy
+    of the last dataframe returned by async_load_vix_term_structure retained in memory unless forceReload
+    is specified.
+    Note that this is meant to be called from programs which  have an event loop.  Use load_vix_term_structure
+    if you have don't have an event loop.
 
-    async def reload_vix_futures_history():
+    parameters:
+    -----------
+    forceReload: specify that the DataFrame should be rebuilt, rather than using the DataFrame cached in memory from the 
+    last call, if one exists.
+
+    """
+
+    async def reload_vix_futures_history()->pd.DataFrame:
+        """
+            Reload the vix futures history, downloading any necessary files.  Avoid downloading files
+            already  in the cache we know are current.
+        """
         global cfe_mcal, valid_days
         logging.debug("Getting Market calendar")
         cfe_mcal =  mcal.get_calendar('CFE')
@@ -498,12 +588,12 @@ async def async_load_vix_term_structure(forceReload=False):
 
     return futures_frame
     
-def select_monthly_futures(vix_futures_records):
+def select_monthly_futures(vix_futures_records:pd.DataFrame)->pd.DataFrame:
 #just the monthly
     monthly=vix_futures_records[vix_futures_records['Weekly'] == False]
     return monthly
 
-def pivot_futures_on_monthly_tenor(vix_monthly_futures_records):
+def pivot_futures_on_monthly_tenor(vix_monthly_futures_records:pd.DataFrame)->pd.DataFrame:
     monthly=vix_monthly_futures_records
     dups=monthly[monthly.index.duplicated(keep=False)]
     if dups.shape[0]>0:
