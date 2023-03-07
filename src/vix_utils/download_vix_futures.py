@@ -377,6 +377,7 @@ def pk_path_from_csv_path(csv_path:Path)->Path:
     csv_path.  Path to a csv file
     """
     pkl_path=csv_path.with_suffix('.pkl')
+    
     return pkl_path
 
 def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozenset)->pd.DataFrame:
@@ -419,7 +420,7 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
     trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
     monthly_tenor=pd.Series(index=df.index,dtype='int32')
     settlement_date_local = settlement_date  
-    look_ahead = 26 #look ahead 25 contracts to determine tenor
+    look_ahead = 40 #look ahead 25 contracts to determine tenor
 
     unrealistic_future_tenor=[1001]
     for index, trade_date in trade_dates.items():
@@ -442,9 +443,7 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
         #  
         settlement_date_py=settlement_date.date()
         def compare_settlement(s1):
-            compare =  settlement_date_py <= s1
-            print(f"{settlement_date_py} <= {s1} : {compare}")
-
+            compare =  settlement_date_py <= s1  #leave this temp in for debugging
             return compare
 
         (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)

@@ -2,26 +2,42 @@ import pytest
 from vix_utils.download_vix_futures import read_csv_future_file,read_csv_future_files
 import pandas as pd
 from pathlib import Path
-
+from shutil import copy,copytree
  
 thisDir = Path(__file__).parent
-futures_sample_dir=thisDir/"data_samples"/"200705_200805_futures"
+futures_sample_input_dir=thisDir/"data_samples"
+import inspect
 
-def test_read_future_file_may_2008_june1_2006():
-    futures_file=futures_sample_dir/"2008-05-21.m_5.CFE_VX_K2008.csv"
+#note the fname portion of dest_folder in the code below is being truncated.
+#no need to fix it.
+
+def function_name():
+    """Return the name of the caller"""
+    fname=inspect.getouterframes(inspect.currentframe())[1].function
+    print(f"Function name{fname}")
+    return fname
+
+def test_read_future_file_may_2008_june1_2006(tmp_path):
+    foldername="200705_200805_futures"
+    fname=function_name()
+    dest_folder=tmp_path/fname/foldername
+    print(f"dest folder:{dest_folder}\nfunction name:{fname}")
+    copytree(futures_sample_input_dir/foldername,dest_folder)
+
+    futures_file=dest_folder/"2008-05-21.m_5.CFE_VX_K2008.csv"
     df=read_csv_future_file(futures_file, {})
-    print(f"\nrecord format\n{df}")
 
 
-def test_read_future_file_may_2008():
-    futures_file=futures_sample_dir/"2008-05-21.m_5.CFE_VX_K2008.csv"
+def test_read_future_file_may_2008(tmp_path):
+    foldername="200705_200805_futures"
+    dest_folder=tmp_path/function_name()/foldername
+    copytree(futures_sample_input_dir/foldername,dest_folder)
+
+    futures_file=dest_folder/"2008-05-21.m_5.CFE_VX_K2008.csv"
     df=read_csv_future_file(futures_file, {})
-    print(f"\nrecord format\n{df}")
     df2=df.set_index(['Trade Date'])
-    print(f"\nResult:\n{df2}")
     df3=df2.loc['2006-06-01']
-    print(f"\nResult:\n{df3}")
-
+ 
     monthTenor=df3["MonthTenor"]
     assert monthTenor==24
     #the monthly  reads don't remove some of the garbage
@@ -33,14 +49,16 @@ def test_read_future_file_may_2008():
             bogus_data=df2.loc[date_str]
             print(f"\n{date_str}: Bogus data:\n{bogus_data}")
 
-def test_read_future_file_may_2007():
-    futures_file=futures_sample_dir/"2007-05-16.m_5.CFE_VX_K2007.csv"
+def test_read_future_file_may_2007(tmp_path):
+    foldername="200705_200805_futures"
+    dest_folder=tmp_path/function_name()/foldername
+    copytree(futures_sample_input_dir/foldername,dest_folder)
+
+    futures_file=dest_folder/"2007-05-16.m_5.CFE_VX_K2007.csv"
     df=read_csv_future_file(futures_file, {})
-    print(f"\nrecord format\n{df}")
     df2=df.set_index(['Trade Date'])
-    print(f"\nResult:\n{df2}")
+
     df3=df2.loc['2006-06-01']
-    print(f"\nResult:\n{df3}")
 
     monthTenor=df3["MonthTenor"]
     assert monthTenor==12
