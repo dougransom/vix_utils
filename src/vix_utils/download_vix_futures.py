@@ -21,6 +21,20 @@ _cached_vix_futures_records = None
 _date_cols=["Trade Date","Settlement Date"]
 _duplicate_check_subset=['Trade Date','Settlement Date']
 
+
+logging.debug("Getting Market calendar")
+cfe_mcal =  mcal.get_calendar('CFE')
+logging.debug("Got Market Calendar")
+#valid_days is expensive, so do it once here
+now=dt.datetime.now()
+#get info for futures expiring up to January 1 in six years.
+#no futures currently trade that far out so this should be fine
+five_years_away=dt.datetime(now.year+6,1,1)
+
+logging.debug("Valid days")
+valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
+logging.debug("Got Valid days")
+
 def vix_settlements(start_year:int,end_year:int) ->Generator[dt.date,None,None]:
     """make an iterator that yields the possible settlments for every week.  we assume every tuesday and 
     wedensday can be a settlement.  """
@@ -365,7 +379,98 @@ def pk_path_from_csv_path(csv_path:Path)->Path:
     pkl_path=csv_path.with_suffix('.pkl')
     return pkl_path
 
-    
+def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozenset)->pd.DataFrame:
+    """
+    Read the csv file in to a data frame, add in the monthly tenor and some calulated columns.
+    parameters:
+    -----------
+    future_path:   the path to the file to load.
+    monthly_settlement_date_strings:  strings that contain all the monthly settlement dates
+    """
+    future_pkl_path=pk_path_from_csv_path(future_path)
+    if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
+        return pd.read_pickle(future_pkl_path)
+
+    try:
+        df = pd.read_csv(future_path,parse_dates=[0])
+    except Exception as e:
+        logging.warn(f"\n {e}\n reading\n{future_path} ")
+        raise
+    fn=future_path.name
+    settlement_date_str=settlement_date_str_from_fn(fn)
+    #week_number  TODO FIGURE THIS OUT
+    monthly=settlement_date_str in monthly_settlement_date_strings
+    df['Weekly']=not monthly
+    #df['WeekOfYear']=?  TODO Figure this out
+    df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
+    df['Year']=settlement_date.year
+    df['MonthOfYear']=settlement_date.month
+
+    df['File']=fn
+
+    df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
+    df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+
+    #remove any errenous rows with an entry later than the expiry day.
+    #there are a few of these  in 2004-2005.
+    df=df[df["Days to Settlement"]>=0]
+
+    trade_dates = df['Trade Date']
+    trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
+    monthly_tenor=pd.Series(index=df.index,dtype='int32')
+    settlement_date_local = settlement_date  
+    look_ahead = 26 #look ahead 25 contracts to determine tenor
+
+    unrealistic_future_tenor=[1001]
+    for index, trade_date in trade_dates.items():
+        
+        trade_date_local=  trade_date  
+        exchange_open_days = valid_days.loc[trade_date_local:settlement_date_local]
+
+
+        trade_days_to_settlement.loc[index]=len(exchange_open_days)
+
+        #find the next   settlement dates plus one way in the future
+        #so that split_after always returns two items.
+
+
+        next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
+            for tenor in itertools.chain(range(1,look_ahead),unrealistic_future_tenor)) 
+            
+        #figure out which monthly tenor applies here.  count the number of settlement dates less than
+        # that contract settlment date.   
+        #  
+        settlement_date_py=settlement_date.date()
+        def compare_settlement(s1):
+            compare =  settlement_date_py <= s1
+            print(f"{settlement_date_py} <= {s1} : {compare}")
+
+            return compare
+
+        (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
+
+
+        month_count=len(settlements_before_final)
+        monthly_tenor.loc[index]=month_count
+
+        #figure out which weekly tenor applies here.
+
+
+    df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
+    df.insert(0,"MonthTenor",monthly_tenor)
+    #it is expensive to build this frame, largely due to localizing timestamps.
+    #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
+    #if the last timestamp is the settlment date
+
+
+    last_row=df.iloc[-1]
+    expired=last_row["Trade Date"]==last_row["Settlement Date"]
+    df["Expired"]=expired
+    if expired:
+        df.to_pickle(future_pkl_path)
+    return df
+     
+   
 def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
         """
         read the downloaded files into data frames.
@@ -388,93 +493,6 @@ def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
         #it might be smarter to use the vix settlments dates instead
 
         monthly_settlement_date_strings=monthly_settlements(itertools.chain(mfns,amfns))
-        def read_csv_future_file(future_path:Path)->pd.DataFrame:
-            """
-            Read the csv file in to a data frame, add in the monthly tenor and some calulated columns.
-            parameters:
-            -----------
-            future_path:   the path to the file to load.
-            """
-            future_pkl_path=pk_path_from_csv_path(future_path)
-            if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
-                return pd.read_pickle(future_pkl_path)
-
-            try:
-                df = pd.read_csv(future_path,parse_dates=[0])
-            except Exception as e:
-                logging.warn(f"\n {e}\n reading\n{future_path} ")
-                raise
-            fn=future_path.name
-            settlement_date_str=settlement_date_str_from_fn(fn)
-            #week_number  TODO FIGURE THIS OUT
-            monthly=settlement_date_str in monthly_settlement_date_strings
-            df['Weekly']=not monthly
-            #df['WeekOfYear']=?  TODO Figure this out
-            df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
-            df['Year']=settlement_date.year
-            df['MonthOfYear']=settlement_date.month
-
-            df['File']=fn
-
-            df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
-            df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
-
-            #remove any errenous rows with an entry later than the expiry day.
-            #there are a few of these  in 2004-2005.
-            df=df[df["Days to Settlement"]>=0]
-
-            trade_dates = df['Trade Date']
-            trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
-            monthly_tenor=pd.Series(index=df.index,dtype='int32')
-            settlement_date_local = settlement_date  
-            look_ahead = 26 #look ahead 25 contracts to determine tenor
-
-            unrealistic_future_tenor=[1001]
-            for index, trade_date in trade_dates.items():
-                
-                trade_date_local=  trade_date  
-                exchange_open_days = valid_days.loc[trade_date_local:settlement_date_local]
-
- 
-                trade_days_to_settlement.loc[index]=len(exchange_open_days)
-
-                #find the next   settlement dates plus one way in the future
-                #so that split_after always returns two items.
-
-
-                next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
-                   for tenor in itertools.chain(range(1,look_ahead),unrealistic_future_tenor)) 
-                 
-                #figure out which monthly tenor applies here.  count the number of settlement dates less than
-                # that contract settlment date.   
-                #  
-                settlement_date_py=settlement_date.date()
-                def compare_settlement(s1):
-                    return  settlement_date_py <= s1
-
-                (settlements_before_final,_)=more_itertools.split_after(next_settlements,compare_settlement,maxsplit=1)
-
-
-                month_count=len(settlements_before_final)
-                monthly_tenor.loc[index]=month_count
-
-                #figure out which weekly tenor applies here.
-
-
-            df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
-            df.insert(0,"MonthTenor",monthly_tenor)
-            #it is expensive to build this frame, largely due to localizing timestamps.
-            #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
-            #if the last timestamp is the settlment date
-
-
-            last_row=df.iloc[-1]
-            expired=last_row["Trade Date"]==last_row["Settlement Date"]
-            df["Expired"]=expired
-            if expired:
-                df.to_pickle(future_pkl_path)
-            return df
-     
         #just read the weeklies, and the montlies prior to 2013.
         #the monthlys are the same as weeklies even though we did download the monthlies a second time we ignore them.
         #   
@@ -483,7 +501,7 @@ def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
             return test_expired
         logging.debug("Reading")
         #exclude reading the frames already in the cached data frame for futures expired.
-        contract_history_frames=[read_csv_future_file(p) for  p in itertools.chain(wfns,amfns) if not is_expired(p)]
+        contract_history_frames=[read_csv_future_file(p,monthly_settlement_date_strings) for  p in itertools.chain(wfns,amfns) if not is_expired(p)]
         logging.debug("Merging")
 
         futures_frame=pd.concat(itertools.chain([settled_frames],contract_history_frames),ignore_index=True)
@@ -494,9 +512,18 @@ def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
 
         futures_frame_ordered_cols=futures_frame.sort_values(by=_date_cols)[column_order]
         futures_frame_expired=futures_frame_ordered_cols[futures_frame_ordered_cols["Expired"]==True]
+
+        #a few days where there is weird rows of 0s except perhaps the settlement column
+        #remove them.
+        futures_frame_ordered_cols=futures_frame_ordered_cols[futures_frame_ordered_cols["Close"]!=0]
+
         #we have seen duplicates in the downloaded data.
         #for example, FEb 27 and Feb 28 trade dates, duplicated for the 2020-03-25 settlement.
+
+
         duplicated=futures_frame_ordered_cols[futures_frame_ordered_cols.duplicated(subset=_duplicate_check_subset,keep=False)]
+
+
         if duplicated.shape[0] > 0:
             logging.warning(f"\nDuplicates detected\n{duplicated}, cleaning them out")
             futures_frame_ordered_cols.drop_duplicates(inplace=True,subset=_duplicate_check_subset)
@@ -546,19 +573,7 @@ async def async_load_vix_term_structure(forceReload=False)->pd.DataFrame:
             Reload the vix futures history, downloading any necessary files.  Avoid downloading files
             already  in the cache we know are current.
         """
-        global cfe_mcal, valid_days
-        logging.debug("Getting Market calendar")
-        cfe_mcal =  mcal.get_calendar('CFE')
-        logging.debug("Got Market Calendar")
-        #valid_days is expensive, so do it once here
-        now=dt.datetime.now()
-        #get info for futures expiring up to January 1 in six years.
-        #no futures currently trade that far out so this should be fine
-        five_years_away=dt.datetime(now.year+6,1,1)
-
-        logging.debug("Valid days")
-        valid_days=cfe_mcal.valid_days(start_date='2000-12-20', end_date=five_years_away).to_series();
-        logging.debug("Got Valid days")
+ 
 
         user_path = data_dir()
         vixutil_path = user_path 
@@ -589,16 +604,52 @@ async def async_load_vix_term_structure(forceReload=False)->pd.DataFrame:
     return futures_frame
     
 def select_monthly_futures(vix_futures_records:pd.DataFrame)->pd.DataFrame:
-#just the monthly
+    """Return only the records with monthly expirys, filtered from vix_futures_records.  
+    parameters:
+    -----------
+    vix futures_records:  the futures history in records format, as downloaded by load_vix_term_structure.
+
+    """    
     monthly=vix_futures_records[vix_futures_records['Weekly'] == False]
     return monthly
 
-def pivot_futures_on_monthly_tenor(vix_monthly_futures_records:pd.DataFrame)->pd.DataFrame:
-    monthly=vix_monthly_futures_records
-    dups=monthly[monthly.index.duplicated(keep=False)]
-    if dups.shape[0]>0:
-        logging.warn(f"Duplicates in index:\n{dups}")
-    
-    pivoted= monthly.set_index(["Trade Date","MonthTenor"]).unstack().swaplevel(0,1,axis=1)
+_stars="*"*30
+
+def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFrame:
+    """
+    First filters the future history in record format to only have monthly records.  Typically the data
+    frame downloaded by load_vix_term_structure.  
+
+    Sets the index to (Trade Date, MonthTenor) and does an unstack, so the values of MonthTenor become the first level
+    column index.
+
+    """
+    #if anything goes wrong in the data (ie. it isn't clean from CBOE), it is likely to cause a problem 
+    # in the unstack operation.  
+    #it is hard to debug so leave the exception handling and 
+    # the temp varables so breakpoints can be set if necessary.
+    with pd.option_context('display.max_columns',None):
+        try:    
+            monthly=select_monthly_futures(vix_futures_records)
+            monthly_indexed=monthly.set_index(["Trade Date","MonthTenor"])
+            dups=monthly_indexed[monthly_indexed.index.duplicated(keep=False)]
+            dups_str=""
+            #easier to debug with a select set of columns to display.
+            debug_cols=["File","Days to Settlement", "Settlement Date","Close","Weekly"]
+            with pd.option_context('display.max_rows',None):
+                if dups.shape[0]>0:         #a common cause of problems are duplicate trade/tenors.
+                    logging.warn(f"\n{_stars}Duplicates detected for Trade Date and Tenor\n")
+                    #we know the unstack will fail in this case. let it.
+                dups_str=f"{dups[debug_cols]}"
+            
+            unstacked = monthly_indexed.unstack()
+            pivoted=unstacked.swaplevel(0,1,axis=1)
+        except Exception as e:
+            msg=(f"\n{_stars}Caught {e} in module in function {__name__}" 
+            f"\n{_stars}\nduplicates in the monthly futures:\n{dups_str}"
+            f"\n{_stars}\nvix_monthly_futures_records:\n{monthly[['Open','Close']]}")
+            logging.error(msg)
+            raise RuntimeError(msg) from e
+ 
 
     return pivoted

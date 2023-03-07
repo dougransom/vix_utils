@@ -32,3 +32,22 @@ Trade Date MonthTenor                                                        ...
         # "2013-11-20.m_11.CFE_VX_X2013.csv"]
         ```
         
+Some more weirdness addressed by removing andy rows with a Close value of 0
+
+```
+WARNING:root:
+******************************Duplicates in index:
+                       Weekly  Trade Days to Settlement  Days to Settlement  ...     Futures                             File  Expired        
+Trade Date MonthTenor                                                        ...
+2006-03-22 12.0         False                     226.0                 329  ...  G (Feb 07)  2007-02-14.m_2.CFE_VX_G2007.csv     True        
+           12.0         False                     289.0                 419  ...  K (May 07)  2007-05-16.m_5.CFE_VX_K2007.csv     True        
+2006-06-01 12.0         False                     240.0                 349  ...  K (May 07)  2007-05-16.m_5.CFE_VX_K2007.csv     True        
+           12.0         False                     496.0                 720  ...  K (May 08)  2008-05-21.m_5.CFE_VX_K2008.csv     True        
+2006-06-02 12.0         False                     239.0                 348  ...  K (May 07)  2007-05-16.m_5.CFE_VX_K2007.csv     True        
+...                       ...                       ...                 ...  ...         ...                              ...      ...        
+2007-03-20 12.0         False                     296.0                 428  ...  K (May 08)  2008-05-21.m_5.CFE_VX_K2008.csv     True        
+2007-03-21 12.0         False                     230.0                 335  ...  G (Feb 08)  2008-02-19.m_2.CFE_VX_G2008.csv     True        
+           12.0         False                     295.0                 427  ...  K (May 08)  2008-05-21.m_5.CFE_VX_K2008.csv     True        
+2007-06-20 12.0         False                     232.0                 336  ...  K (May 08)  2008-05-21.m_5.CFE_VX_K2008.csv     True        
+           12.0         False                     251.0                 364  ...  M (Jun 08)  2008-06-18.m_6.CFE_VX_M2008.csv     True        
+```
