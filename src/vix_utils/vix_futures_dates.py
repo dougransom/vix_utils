@@ -41,6 +41,19 @@ def vix_futures_settlement_date_monthly(year: int, month: int):
     https://markets.cboe.com/tradeable_products/vix/vix_futures/specifications/.
     Holidays are taken into consideration.
 
+    From the CFE Rulke book https://cdn.cboe.com/resources/regulation/rule_book/cfe-rule-book.pdf
+
+        The final settlement date for a contract with the “VX” ticker symbol is on the Wednesday
+    that is thirty days prior to the third Friday of the calendar month immediately following the
+    month in which the contract expires. The final settlement date for a contract with the “VX”
+    ticker symbol followed by a number denoting the specific week of a calendar year is on the
+    Wednesday of the week specifically denoted in the ticker symbol. For symbology
+    purposes, the first week of a calendar year is the first week of that year with a Wednesday
+    on which a weekly VX futures contract could expire. If that Wednesday or the Friday that
+    is thirty days following that Wednesday is a Cboe Options holiday, the final settlement
+    date for the contract shall be on the business day immediately preceding that Wednesday.
+
+
     """
     c = cal.Calendar(firstweekday=cal.SUNDAY)
     next_month = month + 1
