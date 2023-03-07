@@ -30,7 +30,9 @@ dependencies= [
 
 [project.optional-dependencies]
 test=["pytest"]
+
 examples=["matplotlib","scipy"]
+
 [tool.pytest.ini_options]
 minversion = "7.1.2"
 addopts = "--capture=tee-sys "

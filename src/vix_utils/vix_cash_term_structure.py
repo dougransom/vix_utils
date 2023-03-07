@@ -15,9 +15,18 @@ from pathlib import Path
 # use this URL to browse and find the index data
 _cboe_indexes = "https://www.cboe.com/index/indexes"
 
-
+def get_vix_index_histories():
+    """
+    Return the history of some volatility indexes.
+    """
+ 
+    with asyncio.Runner() as runner:
+        return runner.run(async_get_vix_index_histories())
 
 async def async_get_vix_index_histories():
+    """
+    Return the history of some volatility indexes.
+    """
 
     data_directory= Path(data_dir())
 
@@ -91,8 +100,12 @@ async def async_get_vix_index_histories():
 
     return all_vix_cash 
 
-def pivot_cash_term_structure_on_trade_date(all_vix_cash):
-    logging.debug(f"all_vix_cash columns index:  {all_vix_cash.columns}")
-    all_cash_frame = all_vix_cash.pivot(index='Trade Date', columns="Symbol")
-    logging.debug(f"stacked \n{all_cash_frame['Close']}")
+def pivot_cash_term_structure_on_symbol(all_vix_cash):
+    try:           
+        m1=f"all_vix_cash columns index:\n{all_vix_cash.columns}"
+        all_cash_frame = all_vix_cash.set_index(["Trade Date","Symbol"]).unstack()
+    except Exception as e:
+        logging.error("{e} in pivot_cash_term_structure_on_trade_date\n{m1}\n{m1}")
+        raise e
+
     return all_cash_frame

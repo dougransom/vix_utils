@@ -2,8 +2,7 @@
 Example use of vixutil to plot the term structure.
 Be sure to run vixutil -r first to download the data.
 """
-import vixutil as vutil
-
+import vix_utils 
 import pandas as pd
 import logging as logging
 import asyncio
@@ -24,42 +23,35 @@ logger.setLevel(logging.INFO)
 
 
 
-
-vutils=vutil.VixUtilsApi()
-weights=vutils.get_vix_futures_constant_maturity_weights()
-constant_maturity_term_structure = vutils.get_vix_futures_constant_maturity_term_structure()
-cash_vix = vutils.get_cash_vix_term_structure()
-futures_term_structure = vutils.get_vix_futures_term_structure()
-wide_vix_calendar=vutils.get_vix_futures_constant_maturity_weights()
-
+vix_futures_skinny = vix_utils.load_vix_term_structure()
+vix_futures_monthly_skinny=vix_utils.select_monthly_futures(vix_futures_skinny)
+vix_futures_wide=vix_utils.pivot_futures_on_monthly_tenor(vix_futures_monthly_skinny)
+vix_cash=vix_utils.get_vix_index_histories()
+vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
+ 
 sep_lines = "_"*25+"\n"
 
 
+import matplotlib.pyplot as plt
+import scipy.stats as bc
 
-constant_maturity_weights=vutils.get_vix_futures_constant_maturity_weights()
-try:
-    import matplotlib.pyplot as plt
-    import scipy.stats as bc
-except Exception as e:
-    logging.warning(f"""Exception {e} while trying to plot.  matplotlip and scipy.stats 
-                    are required to run the plots in this example. Install them into your environment if you want to
-                    see the graphs.""")
 
-    sys.exit(-3)
-# the nine month has some bad data in it
-#futures_term_structure = futures_term_structure.swaplevel(0,1,axis=1).drop(columns=[9]).swaplevel(0, 1, axis=1)
-#futures_term_structure.drop(level=1,columns=[9,8],inplace=True)
-futures_term_structure[['Close']].plot()
+logging.debug(f"{vix_futures_wide.columns}")
 
-#            futures_term_structure[['VIX1M_SPVIXSTR','Close']].plot()
+#we just want 9 tenors for now
+selected_tenors=list(range(1,10))
+vix_futures_wide=vix_futures_wide[selected_tenors]
+
+close=vix_futures_wide.swaplevel(0,1,axis=1)[["Close"]]
+
+logging.debug(f"\nclose columns: {close.columns}")
+
+close.plot()
 plt.show()
 
-constant_maturity_term_structure[['Close']].plot()
-print(f"Constant maturity term structure {constant_maturity_term_structure}")
-plt.show()
 
-print(f"Cash vix {cash_vix}")
-b=cash_vix['Close'][['VIX3M','VIX','VIX9D']]
+logging.debug(f"Cash vix {vix_cash_wide}")
+b=vix_cash_wide['Close'][['VIX3M','VIX','VIX9D']]
 b.plot()
 plt.show()
 
