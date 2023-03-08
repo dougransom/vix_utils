@@ -21,6 +21,11 @@ _cached_vix_futures_records = None
 _date_cols=["Trade Date","Settlement Date"]
 _duplicate_check_subset=['Trade Date','Settlement Date']
 
+_column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
+       'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
+       'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
+
+_value_columns=['Open', 'High', 'Low', 'Close', 'Settle', 'Change']
 
 logging.debug("Getting Market calendar")
 cfe_mcal =  mcal.get_calendar('CFE')
@@ -114,7 +119,7 @@ def archived_years_and_months():
     #specifically avoid 2013 since the data is dirty and duplicated with the
     #weekly and monthly data from the current download source.
 
-    return list(itertools.product(range(2004,2012),range(1,13)))
+    return list(itertools.product(range(2004,2013),range(1,13)))
 
 def years_and_weeks():
     now = dt.datetime.now()
@@ -505,11 +510,8 @@ def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
 
         futures_frame=pd.concat(itertools.chain([settled_frames],contract_history_frames),ignore_index=True)
         logging.debug("Column ordering")
-        column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
-       'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
-       'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
-        futures_frame_ordered_cols=futures_frame.sort_values(by=_date_cols)[column_order]
+        futures_frame_ordered_cols=futures_frame.sort_values(by=_date_cols)[_column_order]
         futures_frame_expired=futures_frame_ordered_cols[futures_frame_ordered_cols["Expired"]==True]
 
         #a few days where there is weird rows of 0s except perhaps the settlement column
@@ -596,6 +598,15 @@ async def async_load_vix_term_structure(forceReload=False)->pd.DataFrame:
         _cached_vix_futures_records=await reload_vix_futures_history()
  
     futures_frame=_cached_vix_futures_records.copy(deep=True)
+
+    #scale data prior to march 26, 2007.  see data_notes.md
+
+    prior_to_scale_change=futures_frame["Trade Date"] <= '2007-03-26'
+    scale_df = futures_frame[_value_columns].copy(deep=True)*0.1
+    #replace the scaled values in the correct date range
+    scaled_futures_frame=futures_frame.mask(prior_to_scale_change,other=scale_df)
+    futures_frame[_value_columns]=scaled_futures_frame[_value_columns]
+    
     #remove localizatoin
 
     for d in _date_cols:

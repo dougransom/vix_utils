@@ -1,5 +1,11 @@
 
 
+#from 
+https://datashop.cboe.com/cfe-vix-volatility-index-futures-trades-quotes
+
+* Prior to 3/23/2007, VIX had a $100x multiplier. On 3/26/2007 we changed this multiplier to $1000x and divided the display price by 10. https://cdn.cboe.com/resources/regulation/circulars/general/CFE-IC-2007-003.pdf
+
+
 #some of the archived data (2004-2005) has some erroneus 
 #date which appear as duplicates.
 ```
