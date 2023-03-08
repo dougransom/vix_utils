@@ -74,7 +74,13 @@ Clone from  [github repository](https://github.com/dougransom/vix_utils).
 - install the necessary prequisites for running any 
 tests in the `test` folder, and for running the programs in the `examples` folder.
 
+#### Testing
 
+The tests directory contains a few tests.  This project wasn't developed with 
+[Test Driven Development](https://www.agilealliance.org/glossary/tdd/), unit tests have been added to isolate
+and fix defects. 
+
+However, new features and bug fixes should be developed with [Test Driven Development](https://www.agilealliance.org/glossary/tdd/) practices when practical.
 
 
 ## Examples
