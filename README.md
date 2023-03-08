@@ -4,11 +4,11 @@
 *vix_utils* provides some tools for preparing data for analysing  the VIX Futures and Cash Term structures.
 
 Currently, only the functions to download the vix futures and cash term structures work.
-Look in the examples directory, a_loadframes as there is no documentation on how to call them at this time.
+See the notes about examples below.   
 
 The  virtual 30 day future used by VXX and the SVXSTR index are not working yet. Skip down to [installation](#installation). 
 ~~~
-TODO this is not working.
+TODO the command line program is not working
 It provides a command line program that:
 
 * generates a mapping of trade dates to the next settlement date for each vix future maturity.
@@ -64,10 +64,12 @@ Install using pip from [The Python Package Index ](https://www.pypi.org):
 
 `pip install vix_utils`
 
-### Installing after cloning the Git Repository
+### Development or Running the Samples
+
+Clone from  [github repository](https://github.com/dougransom/vix_utils).
 
  
-`pip install -e .[dev,test]` will:
+`pip install -e .[test,examples]` will:
 - install vix_utils into your python environment, including any command line scripts. 
 - install the necessary prequisites for running any 
 tests in the `test` folder, and for running the programs in the `examples` folder.
@@ -75,14 +77,11 @@ tests in the `test` folder, and for running the programs in the `examples` folde
 
 
 
-## Example
-~~~
-An example Python program to use the API to plot the 
-term structure is in example_plot_vix_term_structure.py
-
-Here is a sample plot:
-![Sample Term Structure](./sample_term_structure.png "A sample term structure").
-
+## Examples
+In the examples folder:
+* `a_loadframes.py` shows how to load all the data for vix futures and vix cash histories.
+* `c_plot_vix_term_structure.py` will plot the vix futures history and the vix cash history.
+ 
 ~~~
 ## Developing
 https://numpydoc.readthedocs.io/en/latest/format.html
