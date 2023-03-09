@@ -2,30 +2,57 @@
 requires = ["flit_core >=2,<4"]
 build-backend = "flit_core.buildapi"
 
-[tool.flit.metadata]
-module = "vix_utils"
-author = "Doug Ransom"
-author-email = "doug.ransom@gmail.com"
-home-page = "https://github.com/dougransom/vix_utils"
+[project]
+keywords=["vix","volatility","pandas","vix term structure","cboe"]
+name = "vix_utils"
+authors = [{name="Doug Ransom",email = "doug@ransom.vip"}]
+description="Provide VIX Cash and Futures Term Structure as Pandas dataframes"
 classifiers = ["License :: OSI Approved :: MIT License",
 	"Development Status :: 3 - Alpha",
 	"Intended Audience :: Financial and Insurance Industry",
 	"Topic :: Office/Business :: Financial :: Investment"]
 
-description-file="README.md"
+readme="README.md"
+requires-python=">=3.11"
 
-requires = [
-    "flit >=3.0",
+dynamic=["version"]
+
+dependencies= [
     "pandas",
     "pandas-market-calendars",
-    "Quandl",
     "aiofiles",
-    "aiohttp",
+    "aiohttp[speedups]",
     "matplotlib",
     "scipy",
-    "openpyxl"]
+    "openpyxl",
+    "appdirs"]
 
 
-keywords="vix,volatility,pandas,vix term structure,cboe,quandl"
-[tool.flit.scripts]
+[project.optional-dependencies]
+test=["pytest"]
+
+examples=["matplotlib","scipy"]
+
+[tool.pytest.ini_options]
+minversion = "7.1.2"
+addopts = "--capture=tee-sys "
+# very important
+#the pythonpath lets pytest load code in your source area
+#in addition to that in site-packages etc.
+#you may want to run your tests without install natlinkcore with flit or pip
+pythonpath = [
+]
+testpaths= [
+		"test",
+]
+python_files = [
+			"test_*.py",
+	]
+[project.scripts]
 vixutil = "vix_utils.vixutil:main"
+
+#samples
+vix_sample_plots="vix_utils.examples.sample_plots:main"
+vix_sample_load_data="vix_utils.examples.sample_load_data:main"
+[project.urls]
+home-page = "https://github.com/dougransom/vix_utils"
