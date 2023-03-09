@@ -87,6 +87,7 @@ def main():
     vix_monthly_futures_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_futures)
     vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
 
+    vix_m1m2_weights = vix_utils.vix_constant_maturity_weights(vix_utils.vix_futures_trade_dates_and_expiry_dates())
     if ofile := args.futures_records:
         write_frame(vix_futures, ofile)
 
@@ -99,6 +100,8 @@ def main():
     if ofile := args.cash_wide:
         write_frame(vix_cash_wide,ofile)
 
+    if ofile := args.weights:
+        write_frame(vix_m1m2_weights)   
 
  #TODO   if ofile := args.continuous:
  #         write_frame(cmt, ofile)

@@ -109,7 +109,7 @@ def vix_futures_settlement_date_from_trade_date(year, month, day, tenor):
 
 def vix_constant_maturity_weights(vix_calendar):
     """
-    :param vix_calendar:  the DataFrame returned by  vix_futures_trade_dates_and_settlement_dates
+    :param vix_calendar:  the DataFrame returned by  vix_futures_trade_dates_and_expiry_dates
     :return: a DataFrame containting the weights required to interpolate between the tenors of trading tenors of
     Vix Futures to have a term structure of constant maturity in months.
 
@@ -214,7 +214,7 @@ def cfe_exchange_open_days(start_date, end_date):
 
 
 @u.timeit()
-def vix_futures_trade_dates_and_settlement_dates(number_of_futures_maturities=9):
+def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
     f"""
     :param number_of_futures_maturities:
         :return:  a data frame with an index of trade date and maturity (in months) and a value of the Expiry.  

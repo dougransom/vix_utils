@@ -8,7 +8,10 @@ import logging as logging
 import asyncio
 import sys
 
-
+stars='*'*80
+def pstars():
+    """Print a line of '*' """ 
+    print(stars)
 
 pd.set_option('display.max_rows', 10)
 #need over two months
@@ -69,3 +72,4 @@ one_day_ts.sort_values("Expiry",inplace=True)
 print(f"{one_day_ts}")
 one_day_ts.plot(x="Expiry", y="Close", kind = 'scatter', use_index=True)
 plt.show()
+

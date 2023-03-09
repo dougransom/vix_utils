@@ -3,7 +3,7 @@ from functools import partial,reduce
 from operator import add,mul
 from sample_utils import pstars
 from  vix_utils   import \
-    vix_futures_trade_dates_and_settlement_dates as trade_and_settle, vix_constant_maturity_weights, load_vix_term_structure,\
+    vix_futures_trade_dates_and_expiry_dates as trade_and_settle, vix_constant_maturity_weights, load_vix_term_structure,\
     select_monthly_futures,pivot_futures_on_monthly_tenor
 
 

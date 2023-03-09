@@ -5,8 +5,10 @@ import asyncio as aio
 
 import logging
 import sys
-from sample_utils import pstars
-#set up logging
+stars='*'*80
+def pstars():
+    """Print a line of '*' """ 
+    print(stars)
 logging.basicConfig(stream=sys.stdout, level=logging.WARN)
 
 

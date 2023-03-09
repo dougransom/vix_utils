@@ -7,7 +7,7 @@ import pandas as pd
 
 from .vix_futures_dates import vix_futures_settlement_date_monthly, \
     vix_futures_settlement_date_from_trade_date, \
-    vix_futures_trade_dates_and_settlement_dates, \
+    vix_futures_trade_dates_and_expiry_dates, \
     vix_constant_maturity_weights   
 
 
@@ -64,10 +64,10 @@ def continuous_maturity_30day(monthly_records : pd.DataFrame)->pd.DataFrame:
     ----------
     monthly_records:
         A DataFrame in a record format with monthly settlements only, cotainging the vix futures history. 
-        produced by vix_futures_trade_dates_and_settlement_dates or async_vix_futures_trade_dates_and_settlement_dates
+        produced by vix_futures_trade_dates_and_expiry_dates or async_vix_futures_trade_dates_and_expiry_dates
     """
     
-    df=vix_futures_trade_dates_and_settlement_dates()
+    df=vix_futures_trade_dates_and_expiry_dates()
 
     #bail if caller included weekly settlements
     weekly=monthly_records[monthly_records['Weekly'] == True]
