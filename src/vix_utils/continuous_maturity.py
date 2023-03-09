@@ -52,7 +52,7 @@ def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFr
     produces a weighted mean of the two nearest monthly futures resulting in an average of maturity one month.
     parameters:
     ----------
-    trades_df:  a DataFrame indexed by trade date on axis 0, and by MonthTenor (as the first level index) on axis 1.
+    trades_df:  a DataFrame indexed by trade date on axis 0, and by Tenor_Monthly (as the first level index) on axis 1.
 
     """
     return do_weighting_months(trades_df,weight_df,_weights_and_tenors_vix_front_months)

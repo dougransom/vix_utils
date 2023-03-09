@@ -38,8 +38,8 @@ def test_read_future_file_may_2008(tmp_path):
     df2=df.set_index(['Trade Date'])
     df3=df2.loc['2006-06-01']
  
-    monthTenor=df3["MonthTenor"]
-    assert monthTenor==24
+    Tenor_Monthly=df3["Tenor_Monthly"]
+    assert Tenor_Monthly==24
     #the monthly  reads don't remove some of the garbage
     #just check a  trade not in the file doesn't have data
 
@@ -60,8 +60,8 @@ def test_read_future_file_may_2007(tmp_path):
 
     df3=df2.loc['2006-06-01']
 
-    monthTenor=df3["MonthTenor"]
-    assert monthTenor==12
+    Tenor_Monthly=df3["Tenor_Monthly"]
+    assert Tenor_Monthly==12
     #the monthly  reads don't remove some of the garbage
     #just check a  trade not in the file doesn't have data
 

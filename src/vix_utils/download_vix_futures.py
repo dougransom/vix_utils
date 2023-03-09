@@ -21,7 +21,7 @@ _cached_vix_futures_records = None
 _date_cols=["Trade Date","Settlement Date"]
 _duplicate_check_subset=['Trade Date','Settlement Date']
 
-_column_order=['Trade Date','Weekly','MonthTenor', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
+_column_order=['Trade Date','Weekly','Tenor_Monthly', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
@@ -461,7 +461,7 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
 
 
     df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
-    df.insert(0,"MonthTenor",monthly_tenor)
+    df.insert(0,"Tenor_Monthly",monthly_tenor)
     #it is expensive to build this frame, largely due to localizing timestamps.
     #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
     #if the last timestamp is the settlment date
@@ -631,7 +631,7 @@ def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFra
     First filters the future history in record format to only have monthly records.  Typically the data
     frame downloaded by load_vix_term_structure.  
 
-    Sets the index to (Trade Date, MonthTenor) and does an unstack, so the values of MonthTenor become the first level
+    Sets the index to (Trade Date, Tenor_Monthly) and does an unstack, so the values of Tenor_Monthly become the first level
     column index.
 
     """
@@ -642,7 +642,7 @@ def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFra
     with pd.option_context('display.max_columns',None):
         try:    
             monthly=select_monthly_futures(vix_futures_records)
-            monthly_indexed=monthly.set_index(["Trade Date","MonthTenor"])
+            monthly_indexed=monthly.set_index(["Trade Date","Tenor_Monthly"])
             dups=monthly_indexed[monthly_indexed.index.duplicated(keep=False)]
             dups_str=""
             #easier to debug with a select set of columns to display.
