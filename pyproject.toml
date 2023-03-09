@@ -50,5 +50,9 @@ python_files = [
 	]
 [project.scripts]
 vixutil = "vix_utils.vixutil:main"
+
+#samples
+vix_sample_plots="vix_utils.examples.sample_plots:main"
+vix_sample_load_data="vix_utils.examples.sample_load_data:main"
 [project.urls]
 home-page = "https://github.com/dougransom/vix_utils"

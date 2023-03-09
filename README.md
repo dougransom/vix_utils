@@ -3,56 +3,20 @@
 
 *vix_utils* provides some tools for preparing data for analysing  the VIX Futures and Cash Term structures.
 
-Currently, only the functions to download the vix futures and cash term structures work.
-See the notes about examples below.   
+VIX Futures Data downloaded from [CBOE Futures Historical Data](https://www.cboe.com/us/futures/market_statistics/historical_data/).
 
-The  virtual 30 day future used by VXX and the SVXSTR index are not working yet. Skip down to [installation](#installation). 
-~~~
-TODO the command line program is not working
-It provides a command line program that:
+Vix Cash Data are downloaded from [CBOE Historical Volatility Indexes](https://www.cboe.com/tradable_products/vix/vix_historical_data/).
 
-* generates a mapping of trade dates to the next Expiry for each vix future maturity.
-* downloads the VIX Futures Data from [CBOE](https://www.cboe.com/us/futures/market_statistics/historical_data/) and puts
-all the maturities in a row for a given trade date.  
-* downloads the cash  Vix Term Structure and produces a table indexed by trade date.
-other CBOE index are included.
-* prepares a continuous maturity VIX Futures term structure.  For example, instead of the front month, and second month maturities, it calculates a point on the term structure maturing in one month, two month, etc. from the trade date.  This can also be useful to approximate the [S&P 500 VIX Short-Term Futures Index](https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview) or Exchand Traded Products like [VXX](https://www.ipathetn.com/US/16/en/details.app?instrumentId=341408) or [UVXY](https://www.proshares.com/funds/uvxy.html).
 
-The output can be saved in a variety of formats that can be imported into common analysis tools:
+There is an API for Python to load the data into Pandas DataFrames.  If you do your analysis in Python, use the API.
 
-* .csv (comma seperated values)
-* .pkl  (python pickle format)
-*  .xlsx (excel)
-*  .html
+Since there is no documentation yet, look at the examples in the src/vix_utils/examples folder.
 
-If Python is your language of choice, there is also an API available that can load the data into
-Pandas dataframes.
+If you do your analysis in other tools such as R or excel, you can use the command line tool vixutil.
 
-## Sample command line
+`vixutil -h` will give the help.  The data are availble in record and wide formats.  Just run it and look at the excel or csv output to see what they look like.
 
-This will download the data from CBOE and Quandl, and save the futures and cash term structures as 
-Microsoft Excel Files.
 
-`vixutils -r -t futures_term_structure.xlsx -c cash_term_structure.xlsx `
- 
-For a detailed command line arguments, run 
-
-`vixutils -h`
-
-## Calling from Python
-
-IF you are using Python, it is still easiest to use the command line tool to download the data.
-
-`vixutils -r`.
-
-Then import vixutils into your python program.
-
-`import vixutils`
-
-Look in vixutils.py and it should be fairly obvious how to request the 
-data you would like.
-
-~~~
 
 ## Installation
 
@@ -72,6 +36,8 @@ The sample to load all the various data frames can be run as:
 
 The sample to plot the history of futures and cash term structures:
 `vix_sample_plots`
+
+When you run the samples, they will print out the Python script file names so you can find them wherever pip installs them.
 
 ### Development or Running the Samples
 
