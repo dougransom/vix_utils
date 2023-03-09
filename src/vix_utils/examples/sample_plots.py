@@ -59,20 +59,20 @@ def main():
     b.plot()
     plt.show()
 
-    #plot the term structure for Feb 16, 2021
-    day_of_interest = '2021-02-16'
-    s1 = futures_term_structure.loc[day_of_interest][["Close", "Expiry"]]
-    s2 = constant_maturity_term_structure.loc[day_of_interest][["Close", "Expiry"]]
+    # #plot the term structure for Feb 16, 2021
+    # day_of_interest = '2021-02-16'
+    # s1 = futures_term_structure.loc[day_of_interest][["Close", "Expiry"]]
+    # s2 = constant_maturity_term_structure.loc[day_of_interest][["Close", "Expiry"]]
 
-    s1.index = pd.Index([ (a,f"{b}") for a,b in s1.index])
-    s3=pd.concat([s1,s2])
-    one_day_ts = pd.DataFrame(s3).unstack(0)
-    iii=one_day_ts.columns.droplevel(0)
-    one_day_ts.columns=iii
-    one_day_ts.sort_values("Expiry",inplace=True)
-    print(f"{one_day_ts}")
-    one_day_ts.plot(x="Expiry", y="Close", kind = 'scatter', use_index=True)
-    plt.show()
+    # s1.index = pd.Index([ (a,f"{b}") for a,b in s1.index])
+    # s3=pd.concat([s1,s2])
+    # one_day_ts = pd.DataFrame(s3).unstack(0)
+    # iii=one_day_ts.columns.droplevel(0)
+    # one_day_ts.columns=iii
+    # one_day_ts.sort_values("Expiry",inplace=True)
+    # print(f"{one_day_ts}")
+    # one_day_ts.plot(x="Expiry", y="Close", kind = 'scatter', use_index=True)
+    # plt.show()
 
 if __name__=="__main__":
     main()
