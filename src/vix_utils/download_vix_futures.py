@@ -18,10 +18,10 @@ import logging
 from .location import data_dir,make_dir
 from collections.abc import Generator
 _cached_vix_futures_records = None
-_date_cols=["Trade Date","Settlement Date"]
-_duplicate_check_subset=['Trade Date','Settlement Date']
+_date_cols=["Trade Date","Expiry"]
+_duplicate_check_subset=['Trade Date','Expiry']
 
-_column_order=['Trade Date','Weekly','Tenor_Monthly', 'Trade Days to Settlement','Days to Settlement', 'Settlement Date','Open', 'High',
+_column_order=['Trade Date','Weekly','Tenor_Monthly', 'Tenor_Days','Tenor_Trade_Days', 'Expiry','Open', 'High',
        'Low', 'Close', 'Settle', 'Change', 'Total Volume', 'EFP',
        'Open Interest',   'Year', 'MonthOfYear','Futures',  'File','Expired' ]
 
@@ -353,7 +353,7 @@ async def download(vixutil_path:Path):
 
 def settlement_date_str_from_fn(fn:str)->str:
     """
-    get the settlement date from the file name.
+    get the Expiry from the file name.
     parameters:
     -----------
     fn: file name (without the path)   
@@ -363,7 +363,7 @@ def settlement_date_str_from_fn(fn:str)->str:
 
 def monthly_settlements(monthly_paths)->frozenset[str]:
     """
-    return all the settlement dates (as strings) that are in the downloaded monthly futures. 
+    return all the Expirys (as strings) that are in the downloaded monthly futures. 
     """
     return frozenset(settlement_date_str_from_fn(p.name) for p in monthly_paths)
 
@@ -391,10 +391,10 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
     parameters:
     -----------
     future_path:   the path to the file to load.
-    monthly_settlement_date_strings:  strings that contain all the monthly settlement dates
+    monthly_settlement_date_strings:  strings that contain all the monthly Expirys
     """
     future_pkl_path=pk_path_from_csv_path(future_path)
-    if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the settlement date.
+    if future_pkl_path.exists():  #csv has already been turned into a dataframe, and has all the data for the Expiry.
         return pd.read_pickle(future_pkl_path)
 
     try:
@@ -408,18 +408,18 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
     monthly=settlement_date_str in monthly_settlement_date_strings
     df['Weekly']=not monthly
     #df['WeekOfYear']=?  TODO Figure this out
-    df['Settlement Date']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
+    df['Expiry']=settlement_date=pd.to_datetime(settlement_date_str).tz_localize('US/Eastern')
     df['Year']=settlement_date.year
     df['MonthOfYear']=settlement_date.month
 
     df['File']=fn
 
     df["Trade Date"]=df["Trade Date"].dt.tz_localize("US/Eastern")
-    df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+    df['Tenor_Trade_Days']=((df['Expiry']-df['Trade Date']).dt.days).astype(np.int16)
 
     #remove any errenous rows with an entry later than the expiry day.
     #there are a few of these  in 2004-2005.
-    df=df[df["Days to Settlement"]>=0]
+    df=df[df["Tenor_Trade_Days"]>=0]
 
     trade_dates = df['Trade Date']
     trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
@@ -436,14 +436,14 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
 
         trade_days_to_settlement.loc[index]=len(exchange_open_days)
 
-        #find the next   settlement dates plus one way in the future
+        #find the next   Expirys plus one way in the future
         #so that split_after always returns two items.
 
 
         next_settlements=list(vix_futures_settlement_date_from_trade_date(trade_date.year,trade_date.month,trade_date.day, tenor) \
             for tenor in itertools.chain(range(1,look_ahead),unrealistic_future_tenor)) 
             
-        #figure out which monthly tenor applies here.  count the number of settlement dates less than
+        #figure out which monthly tenor applies here.  count the number of Expirys less than
         # that contract settlment date.   
         #  
         settlement_date_py=settlement_date.date()
@@ -460,7 +460,7 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
         #figure out which weekly tenor applies here.
 
 
-    df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
+    df.insert(0,"Tenor_Days",trade_days_to_settlement)
     df.insert(0,"Tenor_Monthly",monthly_tenor)
     #it is expensive to build this frame, largely due to localizing timestamps.
     #if it is complete, we save it.  we know it is complete (ie no more data points will be recorded in the future)
@@ -468,7 +468,7 @@ def read_csv_future_file(future_path:Path,monthly_settlement_date_strings:frozen
 
 
     last_row=df.iloc[-1]
-    expired=last_row["Trade Date"]==last_row["Settlement Date"]
+    expired=last_row["Trade Date"]==last_row["Expiry"]
     df["Expired"]=expired
     if expired:
         df.to_pickle(future_pkl_path)
@@ -493,7 +493,7 @@ def read_csv_future_files(vixutil_path:Path)->pd.DataFrame:
             settled_frames=pd.DataFrame()
             already_expired=frozenset()
         logging.debug("read cache")
-        #we use the downloaded file names as a list of the settlement dates.
+        #we use the downloaded file names as a list of the Expirys.
         #it might be smarter to use the vix settlments dates instead
 
         monthly_settlement_date_strings=monthly_settlements(itertools.chain(mfns,amfns))
@@ -646,7 +646,7 @@ def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFra
             dups=monthly_indexed[monthly_indexed.index.duplicated(keep=False)]
             dups_str=""
             #easier to debug with a select set of columns to display.
-            debug_cols=["File","Days to Settlement", "Settlement Date","Close","Weekly"]
+            debug_cols=["File","Tenor_Trade_Days", "Expiry","Close","Weekly"]
             with pd.option_context('display.max_rows',None):
                 if dups.shape[0]>0:         #a common cause of problems are duplicate trade/tenors.
                     logging.warn(f"\n{_stars}Duplicates detected for Trade Date and Tenor\n")

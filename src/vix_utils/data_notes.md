@@ -10,7 +10,7 @@ https://datashop.cboe.com/cfe-vix-volatility-index-futures-trades-quotes
 #date which appear as duplicates.
 ```
 
-                       Weekly  Trade Days to Settlement  Days to Settlement  ...     Futures                              File  Expired
+                       Weekly  Tenor_Days  Tenor_Trade_Days  ...     Futures                              File  Expired
 Trade Date Tenor_Monthly                                                        ...
 2004-05-19 1.0          False                       0.0                  -1  ...  K (May 04)   2004-05-18.m_5.CFE_VX_K2004.csv    False
            1.0          False                      17.0                  27  ...  M (Jun 04)   2004-06-15.m_6.CFE_VX_M2004.csv    False
@@ -43,7 +43,7 @@ Some more weirdness addressed by removing andy rows with a Close value of 0
 ```
 WARNING:root:
 ******************************Duplicates in index:
-                       Weekly  Trade Days to Settlement  Days to Settlement  ...     Futures                             File  Expired        
+                       Weekly  Tenor_Days  Tenor_Trade_Days  ...     Futures                             File  Expired        
 Trade Date Tenor_Monthly                                                        ...
 2006-03-22 12.0         False                     226.0                 329  ...  G (Feb 07)  2007-02-14.m_2.CFE_VX_G2007.csv     True        
            12.0         False                     289.0                 419  ...  K (May 07)  2007-05-16.m_5.CFE_VX_K2007.csv     True        

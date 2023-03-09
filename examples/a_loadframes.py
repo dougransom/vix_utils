@@ -29,7 +29,7 @@ print(f"Vix Cash History \n{vix_cash_history}\nVix Cash History index\n{vix_cash
 vix_futures_history=v.load_vix_term_structure()
 
 pstars()
-wide_cash=v.pivot_cash_term_structure_on_trade_date(vix_cash_history)
+wide_cash=v.pivot_cash_term_structure_on_symbol(vix_cash_history)
 print(f"Wide Vix Cash history\n{wide_cash}\nWide Cash History Index\n{wide_cash.columns}")
 
 pstars()

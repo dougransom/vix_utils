@@ -166,7 +166,7 @@ parser.add_argument("-c", dest="cash", help=f"""output the vix cash term structu
         {output_format_help}.  Some other indexes from CBOE
         will also be included.  {output_format_help} """)
 
-parser.add_argument("--calendar", dest="calendar", help="settlement dates for vix futures for a given trade date")
+parser.add_argument("--calendar", dest="calendar", help="Expirys for vix futures for a given trade date")
 parser.add_argument("--start_date", dest="start_date", help="iso format date YYYY-MM-DD, exclude any dates prior")
 parser.add_argument("--end_date", dest="end_date", help="iso format date, YYYY-MM-DD exclude any dates after")
 

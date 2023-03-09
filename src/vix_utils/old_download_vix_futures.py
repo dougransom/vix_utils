@@ -86,15 +86,15 @@ _data_root_url="https://www.cboe.com/us/futures/market_statistics/historical_dat
 
 _xm = 'XMonth'
 _ym = 'YMonth'
-_sd = "Settlement Date"
+_sd = "Expiry"
 _td ="Trade Date"
 
 #the columns that will be in the dataframe
 
 _final_cols=[ _nth := 'Nth Month', 'Close', 'Open', 'High', 'Low', 'Settle', 'Change',
        'Total Volume', 'EFP', 'Open Interest', 
-       _dts:='Days to Settlement', _tdts:= 'Trade Days to Settlement',_mdts:="Measured Trade Days to Settlement",
-       _cdts:="Calculated Trade Days to Settlement",
+       _dts:='Tenor_Trade_Days', _tdts:= 'Tenor_Days',_mdts:="Measured Tenor_Days",
+       _cdts:="Calculated Tenor_Days",
        'Futures',"File Name"]
 
 #the columns which will be categorical
@@ -107,17 +107,17 @@ _cc="content-disposition"
 
 #date handling for series still open
 #http://www.cboe.com/products/futures/vx-cboe-volatility-index-vix-futures/contract-specifications
-#Final Settlement Date:
-#The final settlement date for a contract with the "VX" ticker symbol is on the Wednesday that is 30 days
+#Final Expiry:
+#The final Expiry for a contract with the "VX" ticker symbol is on the Wednesday that is 30 days
 #  prior to the third Friday of the calendar month immediately following
 #  the month in which the contract expires. 
-# The final settlement date for a futures contract with 
+# The final Expiry for a futures contract with 
 # the "VX" ticker symbol followed by a number denoting the specific week of a calendar 
 # year is on the Wednesday of the week specifically denoted in the ticker 
 # symbol.
 #
 #If that Wednesday or the Friday that is 30 days following that Wednesday is a Cboe Options holiday,
-#the final settlement date for the contract shall be on the business day immediately preceding that Wednesday.
+#the final Expiry for the contract shall be on the business day immediately preceding that Wednesday.
 #VX Futures Symbols - VX* and VX01 through VX53**. Embedded numbers denote the 
 # specific week of a calendar year during which a contract is settled. For
 #  symbology purposes, the first week of a calendar year is the first
@@ -137,7 +137,7 @@ class VXFuturesDownloader:
         self.parquet_path = self.futures_data_dir + "/vix_futures.parquet"
         #path to store continous futures dataframe
         self.cf_parquet_path = self.futures_data_dir + "/vix_continous_futures.parquet"
-        #calendar used to determine trading days to settlement
+        #calendar used to determine trading Tenor_Trade_Days
         self.cfe =  mcal.get_calendar('CFE')
         #valid_days is expensive, so do it once here
         now=dt.datetime.now()
@@ -228,8 +228,8 @@ class VXFuturesDownloader:
         wednesday_in_first_week = m[0][wednesday_index] != 0
         first_wednesday = md[0 if wednesday_in_first_week else 1][wednesday_index]
         settlement_date=first_wednesday+dt.timedelta(weeks = (week_number-1) )
-        #        print(f"Weekly {year} {month} {week_number}  settlement date: {settlement_date}")
-        #no knowns special cases settlment dates for weekly settlement dates as of 2020-08-15
+        #        print(f"Weekly {year} {month} {week_number}  Expiry: {settlement_date}")
+        #no knowns special cases settlment dates for weekly Expirys as of 2020-08-15
 
         return settlement_date
 
@@ -324,7 +324,7 @@ class VXFuturesDownloader:
             pd_now = pd.Timestamp.now(tz='US/Eastern')
             dt_now = dt.datetime.now()
             settlement_date = dt.date.fromisoformat(settlement_date_str)
-            #if the settlement date is before the file date
+            #if the Expiry is before the file date
             #we don't need to download the file again
             #load it from disk instead
             if settlement_date < pq_time.date():
@@ -440,8 +440,8 @@ class VXFuturesDownloader:
         elapsed_since_last_trade = (today-last_trade_date).days 
      
  #       print(f"Elapsed since {last_trade_date} : {elapsed_since_last_trade} currently_trading {currently_trading}")
-        df['Settlement Date']  = (settlement_date := pd.to_datetime(settlement_date_str))
-        df['Days to Settlement']=((df['Settlement Date']-df['Trade Date']).dt.days).astype(np.int16)
+        df['Expiry']  = (settlement_date := pd.to_datetime(settlement_date_str))
+        df['Tenor_Trade_Days']=((df['Expiry']-df['Trade Date']).dt.days).astype(np.int16)
        
         trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
         calculated_trade_days_to_settlement=pd.Series(index=df.index,dtype='int32')
@@ -467,9 +467,9 @@ class VXFuturesDownloader:
             trade_days=measured_trade_days_to_settlement
         #these shoud be the same, but if there is a bug in the 
         #calendar, they will be different
-        df.insert(0,'Measured Trade Days to Settlement',measured_trade_days_to_settlement)
-        df.insert(0,'Calculated Trade Days to Settlement',calculated_trade_days_to_settlement)
-        df.insert(0,"Trade Days to Settlement",trade_days_to_settlement)
+        df.insert(0,'Measured Tenor_Days',measured_trade_days_to_settlement)
+        df.insert(0,'Calculated Tenor_Days',calculated_trade_days_to_settlement)
+        df.insert(0,"Tenor_Days",trade_days_to_settlement)
         df['File Name']=vix_futures_file_name
         #convert the columns that rarely changed to categories
 
@@ -522,7 +522,7 @@ class VXFuturesDownloader:
 
 
     def _build_continous_monthly_vix_futures(self,futures_df,min_month=1,max_month=8):
-        #min_month of 0 will include futures on their settlement date
+        #min_month of 0 will include futures on their Expiry
         # one trade date a month 
         # max_month > 9 will show futures with longer maturity
         # that may not be regularly issued.  Nov 2020 traded for a year.
@@ -627,7 +627,7 @@ def not_main():
     Select tall for having the row values indexed by Trade Date and Tenor.  This is the more usable format
     if you can unstack or pivot the data in your code.     
     A wide dataframe will have a column
-    for each data series (i.e. 'Close', 'Trade Days to Settlement'), for each monthly tenor.  For the parquet or CSV format,
+    for each data series (i.e. 'Close', 'Tenor_Days'), for each monthly tenor.  For the parquet or CSV format,
     in the wide dataframe the monthly tenors are concatenated to the column name, so you get "Close_1", "Close_2".  
     The  default is {shape_default}.  Select tall if there are facilities available to pivot or unstack 
     the data in your target environment.  """, default=wide)
