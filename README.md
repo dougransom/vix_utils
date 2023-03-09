@@ -16,7 +16,8 @@ If you do your analysis in other tools such as R or excel, you can use the comma
 
 `vixutil -h` will give the help.  The data are availble in record and wide formats.  Just run it and look at the excel or csv output to see what they look like.
 
-
+## Coming Soon
+30 day continuous maturity weighting of front two months of vix futures.
 
 ## Installation
 
@@ -32,14 +33,14 @@ If you want to run the samples, install like this:
 `pip install vix_utils[examples]`
 
 The sample to load all the various data frames can be run as:
-'vix_loadframes'
+'vix_sample_load_data'
 
 The sample to plot the history of futures and cash term structures:
 `vix_sample_plots`
 
 When you run the samples, they will print out the Python script file names so you can find them wherever pip installs them.
 
-### Development or Running the Samples
+### Development 
 
 Clone from  [github repository](https://github.com/dougransom/vix_utils).
 
@@ -47,7 +48,7 @@ Clone from  [github repository](https://github.com/dougransom/vix_utils).
 `pip install -e .[test,examples]` will:
 - install vix_utils into your python environment, including any command line scripts. 
 - install the necessary prequisites for running any 
-tests in the `test` folder, and for running the programs in the `examples` folder.
+tests in the `test` folder, and for running the programs in the `src/vixutils/examples` folder.
 
 #### Testing
 
@@ -59,9 +60,7 @@ However, new features and bug fixes should be developed with [Test Driven Develo
 
 
 ## Examples
-In the examples folder:
-* `a_loadframes.py` shows how to load all the data for vix futures and vix cash histories.
-* `c_plot_vix_term_structure.py` will plot the vix futures history and the vix cash history.
+Source is in `src/vix_utils/examples`
  
 ~~~
 ## Developing
