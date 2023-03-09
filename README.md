@@ -64,6 +64,15 @@ Install using pip from [The Python Package Index ](https://www.pypi.org):
 
 `pip install vix_utils`
 
+If you want to run the samples, install like this:
+`pip install vix_utils[examples]`
+
+The sample to load all the various data frames can be run as:
+'vix_loadframes'
+
+The sample to plot the history of futures and cash term structures:
+`vix_sample_plots`
+
 ### Development or Running the Samples
 
 Clone from  [github repository](https://github.com/dougransom/vix_utils).

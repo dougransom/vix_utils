@@ -639,12 +639,12 @@ def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFra
     # in the unstack operation.  
     #it is hard to debug so leave the exception handling and 
     # the temp varables so breakpoints can be set if necessary.
+    dups_str=""
     with pd.option_context('display.max_columns',None):
         try:    
             monthly=select_monthly_futures(vix_futures_records)
             monthly_indexed=monthly.set_index(["Trade Date","Tenor_Monthly"])
             dups=monthly_indexed[monthly_indexed.index.duplicated(keep=False)]
-            dups_str=""
             #easier to debug with a select set of columns to display.
             debug_cols=["File","Tenor_Trade_Days", "Expiry","Close","Weekly"]
             with pd.option_context('display.max_rows',None):

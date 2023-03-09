@@ -27,50 +27,57 @@ output_format_help = f"""The file extension determines the file type. Valid exte
 
  
 
-parser.add_argument("-f", dest="futures_records",
+parser.add_argument("-f", 
+                    metavar="output_file",
+                    dest="futures_records",
                     help=f"""output the history of vix futures to a file in record format. Includes weekly and monthly expiries.
                     {output_format_help}""")
 
-parser.add_argument("-g", dest="futures_wide", help=f"""output the history of vix monthly expiry futures in wide format, with a column for each tenor.  
+parser.add_argument("-g",
+                    metavar="output_file", 
+                    dest="futures_wide", help=f"""output the history of vix monthly expiry futures in wide format, with a column for each tenor.  
                     {output_format_help}""")
 
-parser.add_argument("-w", dest="continuous_weights", help=f"""output the weights of the various vix futures front two months 
+parser.add_argument("-w", 
+                    metavar="output_file",
+                    dest="w_m1m2", help=f"""output the weights of the various vix futures front two months 
     to make a 30 day average tenor.   
     Note the weights are as of the beginning of the trading day.  {output_format_help}""")
 
-parser.add_argument("-c", dest="cash_records", help=f"""output the vix cash term structure a file in record format. 
+parser.add_argument("-c",
+                    metavar="output_file", 
+                    dest="cash_records", help=f"""output the vix cash term structure a file in record format. 
         {output_format_help}.  Some other indexes from CBOE
         will also be included.  {output_format_help} """)
-parser.add_argument("-d", dest="cash_wide", help=f"""output the vix cash term structure a file in wide format,with a column for each index. 
+parser.add_argument("-d", 
+                    metavar="output_file",
+                    dest="cash_wide", help=f"""output the vix cash term structure a file in wide format,with a column for each index. 
         {output_format_help}.  Some other indexes from CBOE
         will also be included.  {output_format_help} """)
 
 
-parser.add_argument("--calendar", dest="calendar", help="Expirys for vix futures for a given trade date")
+parser.add_argument("--calendar", metavar="output_file", dest="calendar", help="Expirys for vix futures for a given trade date")
 
-parser.add_argument("--loglevel",dest="loglevel",choices=["DEBUG","INFO","WARNING","ERROR", "CRITICAL"], help=
+parser.add_argument("--loglevel", metavar="output_file",dest="loglevel",choices=["DEBUG","INFO","WARNING","ERROR", "CRITICAL"], help=
                     f"Level for logging module to display, default is ERROR",
                     default="ERROR")
                     
 
-async def write_frame_ex(frame, ofile, functions):
+def write_frame_ex(frame, ofile, functions):
 
 
     extension_to_function_map = dict(zip(extensions, functions))
     suffix = pathlib.Path(ofile).suffix
     if suffix in extension_to_function_map:
         fn = extension_to_function_map[suffix]
-        outstream=io.StringIO()
-        fn(outstream)
-        with aiofiles.open(ofile,mode='b') as f:
-            await f.write(outstream.buffer)
+        fn(ofile)
     else:
         print(f"Unsupported extension, only {extensions} are supported")
 
 
-async def write_frame(frame,ofile):
+def write_frame(frame,ofile):
     functions = [frame.to_csv, frame.to_pickle,  frame.to_excel, frame.to_html]
-    return await write_frame_ex(frame,ofile,functions)
+    return  write_frame_ex(frame,ofile,functions)
 
 
 
@@ -82,9 +89,9 @@ def main():
     args = parser.parse_args()
     logger.setLevel(args.loglevel)
 
-    vix_futures=vix_utils.get_vix_index_histories()
+    vix_futures=vix_utils.load_vix_term_structure()
     vix_cash=vix_utils.get_vix_index_histories()
-    vix_monthly_futures_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_futures)
+    vix_monthly_futures_wide=vix_utils.pivot_futures_on_monthly_tenor(vix_futures)
     vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
 
     vix_m1m2_weights = vix_utils.vix_constant_maturity_weights(vix_utils.vix_futures_trade_dates_and_expiry_dates())
@@ -100,8 +107,8 @@ def main():
     if ofile := args.cash_wide:
         write_frame(vix_cash_wide,ofile)
 
-    if ofile := args.weights:
-        write_frame(vix_m1m2_weights)   
+    if ofile := args.w_m1m2:
+        write_frame(vix_m1m2_weights,ofile)   
 
  #TODO   if ofile := args.continuous:
  #         write_frame(cmt, ofile)
