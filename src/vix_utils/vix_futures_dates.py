@@ -31,7 +31,7 @@ _valid_cfe_days = pd.DatetimeIndex(
 
 
 @func.lru_cache(maxsize=None)  # called repeatedly with the same values, so cache the results.
-def vix_futures_settlement_date_monthly(year: int, month: int):
+def vix_futures_expiry_date_monthly(year: int, month: int):
     """
     Return the date of expiry of Vix Monthly Futures the series expiring in year and month
     :param year: The year of futures expiry
@@ -86,7 +86,7 @@ def vix_futures_settlement_date_monthly(year: int, month: int):
     return futures_expiry_date
 
 
-def vix_futures_settlement_date_from_trade_date(year, month, day, tenor):
+def vix_futures_expiry_date_from_trade_date(year, month, day, tenor):
     """
     :param year:  year of trade date
     :param month:  month of trade date
@@ -96,15 +96,15 @@ def vix_futures_settlement_date_from_trade_date(year, month, day, tenor):
     """
 
     '''tenor is the number of months (or part months) to expiration.  the front month tenor is 1'''
-    this_calendar_months_settlement = vix_futures_settlement_date_monthly(year, month)
+    this_calendar_months_expiry = vix_futures_expiry_date_monthly(year, month)
     # deal with the part of the month, where the settlment month is the following month
     # if the month_of_settlement is less than the current month, then the  settlement is next year
 
-    months_forward_for_tenor = (0 if day <=  this_calendar_months_settlement.day else 1)
-    month_of_settlement = (month + months_forward_for_tenor + tenor - 1) % 12
-    year_of_settlement = year + (
-        1 if month_of_settlement < month else 0) + (tenor-1)//12
-    return vix_futures_settlement_date_monthly(year_of_settlement, month_of_settlement)
+    months_forward_for_tenor = (0 if day <=  this_calendar_months_expiry.day else 1)
+    month_of_expiry = (month + months_forward_for_tenor + tenor - 1) % 12
+    year_of_expiry = year + (
+        1 if month_of_expiry < month else 0) + (tenor-1)//12
+    return vix_futures_expiry_date_monthly(year_of_expiry, month_of_expiry)
 
 
 def vix_constant_maturity_weights(vix_calendar):
@@ -241,7 +241,7 @@ def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
         def add_settle_date_and_trade_days_to_settlement(row):
             ix = row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
-            sd = vix_futures_settlement_date_from_trade_date(year, month, day, maturity)
+            sd = vix_futures_expiry_date_from_trade_date(year, month, day, maturity)
             tds = cfe_exchange_open_days(ix, sd) - 1
             return sd, tds
 
@@ -266,44 +266,6 @@ def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
     # print(f"unstacked: \{unstacked}")
     return unstacked
 
-#todo delete this
-def deleteme_vix_continuous_maturity_term_structure(wide_settlement_calendar, vix_term_structure):
-    """Returns a constant maturity in months for the vix futures term structure by interpolating
-    between the two months.
-    https://www.spglobal.com/spdji/en/indices/strategy/sp-500-vix-short-term-index-mcap/#overview
-    The weights are the weights   """
-
-    weights_df = vix_constant_maturity_weights(wide_settlement_calendar)
-
-    def weight(month):
-        cmdf = pd.DataFrame(index=vix_term_structure.index)
-
-        weighted_open, weighted_close = ( weights_df["Front Month Weight"] * vix_term_structure[colname][month] + \
-            weights_df["Next Month Weight"] * vix_term_structure[colname][month + 1] \
-            for colname in ("Open", "Close") )
-        cmdf['Open'] = weighted_open
-        cmdf['Close'] = weighted_close
-        cmdf['Maturity Month'] = month
-        # the notional Expiry for the interpolation between months 2-3, 3,-4 etc
-        # may not land on a trade date.
-        cmdf['Expiry'] = weights_df['Notional Expiry']+ pd.DateOffset(months=month-1)
-        return cmdf
-
-    weighted_frames = (weight(month) for month in range(1, 9))
-    merged_df = pd.concat(weighted_frames)
-    pivoted = merged_df.reset_index().pivot(columns="Maturity Month", index="Trade Date")
-
-    # keep only the rows where the front month interpolated close is not null
-
-    p_filter = pivoted["Close"][1].notnull()
-    # n ame the columns by the two months they are comprised of
-    pivoted.columns = pd.Index([(a, f"M{b}{b + 1}") for a, b in pivoted.columns])
-
-    return pivoted[p_filter]
-
-
-
-    return pivoted
 
  
     

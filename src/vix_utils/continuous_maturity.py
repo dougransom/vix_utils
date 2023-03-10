@@ -3,10 +3,10 @@ from functools import partial
 from .download_vix_futures import  \
 pivot_futures_on_monthly_tenor
 import pandas as pd
+import logging
 
-
-from .vix_futures_dates import vix_futures_settlement_date_monthly, \
-    vix_futures_settlement_date_from_trade_date, \
+from .vix_futures_dates import vix_futures_expiry_date_monthly, \
+    vix_futures_expiry_date_from_trade_date, \
     vix_futures_trade_dates_and_expiry_dates, \
     vix_constant_maturity_weights   
 
@@ -57,36 +57,84 @@ def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFr
     """
     return do_weighting_months(trades_df,weight_df,_weights_and_tenors_vix_front_months)
 
-def continuous_maturity_30day(monthly_records : pd.DataFrame)->pd.DataFrame:   
+def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
+    """
+    produces a weighted mean of the two nearest monthly futures (using continous_maturity_30day)
+    appends it to the monthly_wide_records.
+    There will be fewer columns as the result of continous_maturity_30day has fewer columns for a tenor than 
+    monthly_wide_records.
+    parameters:
+    -----------
+    monthly_records:
+        A DataFrame in a wide format of Monthly records, as returned by  pivot_futures_on_monthly_tenor     
+   
+    """
+
+    cm=continuous_maturity_30day(monthly_wide_records)
+    wide_columns=monthly_wide_records[1].columns
+    #intersection of columns in the two data frames
+     
+    cols=[col for col in cm.columns if col in wide_columns ]
+    new_df1=monthly_wide_records.swaplevel(axis=1)[cols]
+    new_cm=cm[cols]
+    new_df2=new_df1.swaplevel(axis=1)
+    #add a level to new_cm
+    d={}
+    d["30 Day Continuous"]=new_cm
+    e=pd.concat(d,axis=1)
+
+    #concatenate new_cm (after adding the level of idexing)
+    new_df3=pd.concat([new_df2,e],axis=1)
+    return new_df3
+
+
+
+
+
+
+
+
+
+def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:   
     """
     produces a weighted mean of the two nearest monthly futures resulting in an average of maturity one month.
-    parameters
-    ----------
+    parameters:
+    -----------
     monthly_records:
-        A DataFrame in a record format with monthly settlements only, cotainging the vix futures history. 
-        produced by vix_futures_trade_dates_and_expiry_dates or async_vix_futures_trade_dates_and_expiry_dates
+        A DataFrame in a wide format of Monthly records, as returned by  pivot_futures_on_monthly_tenor     
     """
     
     df=vix_futures_trade_dates_and_expiry_dates()
 
-    #bail if caller included weekly settlements
-    weekly=monthly_records[monthly_records['Weekly'] == True]
-    assert weekly.shape[0]==0,  "monthly_records must not contain weeklies, filter with select_monthly_futures(...)"
+  
 
-    futures_history=pd.DataFrame(monthly_records)
-    futures_history_indexed_by_date=futures_history.set_index('Trade Date')
-    futures_history_by_tenor=pivot_futures_on_monthly_tenor(futures_history)
+    futures_history=pd.DataFrame(monthly_wide_records)
 
+ 
+       
+
+ 
     weights_all=vix_constant_maturity_weights(df)
 
     #we only need the weigths we for dates we have trades
-    weights=weights_all[weights_all.index.isin(futures_history_indexed_by_date.index)]
+    weights=weights_all[weights_all.index.isin(futures_history.index)]
 
     #select the front two months and the columns that have trade values
-    futures_history_trade_value_columns=futures_history_by_tenor[[1,2]].swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1) 
+    with pd.option_context('display.max_columns',None): 
+        logging.debug(f"\n{'*'*50}\nColumns to weight:\n{futures_history}")
+    front_two_months=futures_history[[1,2]]
+    futures_history_trade_value_columns=front_two_months.swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1)
+ 
     weighted_values=do_weighting_front_two_months(futures_history_trade_value_columns,weights)
 
-    #just select the ones where the timestamp index is also in futures_history
-    filtered_weighted_values=weighted_values[futures_history_by_tenor.index.isin(weighted_values.index)]
+    #should have the same number of rows
+    assert weighted_values.shape[0]==futures_history_trade_value_columns.shape[0]
 
-    return filtered_weighted_values
+    
+    df_file=front_two_months.swaplevel(axis=1)["File"]
+    weighted_values["File"]=df_file[1]+"+"+df_file[2] 
+    weighted_values['Expiry']=weighted_values.index+pd.Timedelta(days=30) 
+    weighted_values["Tenor_Days"]=30
+
+
+    return weighted_values

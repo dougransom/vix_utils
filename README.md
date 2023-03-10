@@ -3,6 +3,8 @@
 
 *vix_utils* provides some tools for preparing data for analysing  the VIX Futures and Cash Term structures.
 
+The futures can also contain a 30 day continuous maturity weighting of front two months of vix futures.
+
 VIX Futures Data downloaded from [CBOE Futures Historical Data](https://www.cboe.com/us/futures/market_statistics/historical_data/).
 
 Vix Cash Data are downloaded from [CBOE Historical Volatility Indexes](https://www.cboe.com/tradable_products/vix/vix_historical_data/).
@@ -16,8 +18,8 @@ If you do your analysis in other tools such as R or excel, you can use the comma
 
 `vixutil -h` will give the help.  The data are availble in record and wide formats.  Just run it and look at the excel or csv output to see what they look like.
 
-## Coming Soon
-30 day continuous maturity weighting of front two months of vix futures.
+ 
+
 
 ## Installation
 

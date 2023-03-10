@@ -1,6 +1,6 @@
 import pytest
 import typing
-from vix_utils.vix_futures_dates import  vix_futures_settlement_date_from_trade_date
+from vix_utils.vix_futures_dates import  vix_futures_expiry_date_from_trade_date
 import datetime as dt
 from  functools import partial
 from . import fiso
@@ -18,7 +18,7 @@ from . import fiso
 def test_settlement_from_trade_date(date_yy_mm_dd,settlement_date_str_list):
  
 
-    settlements_from_tenor=partial(vix_futures_settlement_date_from_trade_date,*date_yy_mm_dd)
+    settlements_from_tenor=partial(vix_futures_expiry_date_from_trade_date,*date_yy_mm_dd)
 
     dates = [fiso(strdate) for strdate in settlement_date_str_list]
     for tenor, expected in zip(range(1,1+len(dates)),dates):
@@ -31,7 +31,7 @@ def test_settlement_from_trade_date(date_yy_mm_dd,settlement_date_str_list):
 def test_settlement_from_trade_date_tenor(trade_date_str,tenor,settlement_date_str):
     td=fiso(trade_date_str)
     expected_sd=fiso(settlement_date_str)
-    settlement=vix_futures_settlement_date_from_trade_date(td.year,td.month,td.day,tenor)
+    settlement=vix_futures_expiry_date_from_trade_date(td.year,td.month,td.day,tenor)
     print(f"tenor {tenor} settlement {settlement} expected {expected_sd}")
 
     assert settlement==expected_sd

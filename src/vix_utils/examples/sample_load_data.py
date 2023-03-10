@@ -11,7 +11,7 @@ def pstars():
     print(stars)
 
 def main():
-    logging.basicConfig(stream=sys.stdout, level=logging.WARN)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     print(f"\n{stars}Running python file:\n{__file__}\n")
     async def do_load():
@@ -51,14 +51,19 @@ def main():
     pstars()
     pivoted= v.pivot_futures_on_monthly_tenor(monthly)
     print(f"\npivoted {pivoted}")
-    pivoted=pivoted.swaplevel(0,1,axis=1)
+    pivoted_swapped=pivoted.swaplevel(0,1,axis=1)
 
-    pivoted=pivoted[['Close','File']]
-    print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted}\ncolumn_index{pivoted.columns}")
+    pivoted_two_cols=pivoted_swapped[['Close','File']]
+    print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted_two_cols}\ncolumn_index{pivoted_two_cols.columns}")
 
     pstars()
-    m1m2_weighted=v.continuous_maturity_30day(monthly)
-    print(f"\nm1m2 weighted:\n{m1m2_weighted}")
+    m1m2_weighted=v.continuous_maturity_30day(pivoted)
+    print(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
+
+    appended_m1m2=v.append_continuous_maturity_30day(pivoted)
+    appended_m1m2_close=appended_m1m2[[1,2,'30 Day Continuous']].swaplevel(axis=1)['Close']
+    print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")
+
 
 if __name__=="__main__":
     main()
