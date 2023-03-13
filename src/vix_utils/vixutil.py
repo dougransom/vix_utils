@@ -37,7 +37,9 @@ parser.add_argument("-g",
                     metavar="output_file", 
                     dest="futures_wide", help=f"""output the history of vix monthly expiry futures in wide format, with a column for each tenor.  
                     {output_format_help}""")
-
+parser.add_argument("-j", 
+                    metavar="output_file",
+                    dest="futures_m1m2", help=f"""weighted mean of the front two month vix futures for an average thirty day tenor .     {output_format_help}""")
 parser.add_argument("-w", 
                     metavar="output_file",
                     dest="w_m1m2", help=f"""output the weights of the various vix futures front two months 
@@ -95,6 +97,7 @@ def main():
     vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
 
     vix_m1m2_weights = vix_utils.vix_constant_maturity_weights(vix_utils.vix_futures_trade_dates_and_expiry_dates())
+    futures_m1m2=vix_utils.continuous_maturity_30day(vix_monthly_futures_wide)
     if ofile := args.futures_records:
         write_frame(vix_futures, ofile)
 
@@ -109,21 +112,11 @@ def main():
 
     if ofile := args.w_m1m2:
         write_frame(vix_m1m2_weights,ofile)   
+    
+    if ofile := args.futures_m1m2:
+        write_frame(futures_m1m2,ofile)   
 
- #TODO   if ofile := args.continuous:
- #         write_frame(cmt, ofile)
-
-
-
-#    if ofile := args.calendar:
-#        calendar = vutils.get_vix_trade_and_future_settlements()[selection]
-#        write_frame(calendar, ofile)
-#todo
-
-# todo   
-# if ofile := args.continuous_weights:
-#        weights = vutils.get_vix_futures_constant_maturity_weights()[selection]
-#        write_frame(weights, ofile)
+ 
 
     return 0
 
