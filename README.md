@@ -14,6 +14,10 @@ There is an API for Python to load the data into Pandas DataFrames.  If you do y
 
 Since there is no documentation yet, look at the examples in the src/vix_utils/examples folder.
 
+*Important note for Juypter notebooks.*  
+You must use  async_get_vix_index_histories and async_load_vix_term_structure 
+rather than get_vix_index_histories and load_vix_term_structure.  There is an example Jupyter notebook "vix_utils use in Jupyter.ipynb" in the src/vix_utils/examples folder. 
+ 
 If you do your analysis in other tools such as R or excel, you can use the command line tool vixutil.
 
 `vixutil -h` will give the help.  The data are availble in record and wide formats.  Just run it and look at the excel or csv output to see what they look like.
@@ -40,7 +44,8 @@ The sample to load all the various data frames can be run as:
 The sample to plot the history of futures and cash term structures:
 `vix_sample_plots`
 
-When you run the samples, they will print out the Python script file names so you can find them wherever pip installs them.
+To load the sample Jupyter notebook, run vix_sample_load_data to figure out where the examples folder is. Browse there with Jupyter and open a notebook.   
+
 
 ### Development 
 
