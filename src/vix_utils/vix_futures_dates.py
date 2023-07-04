@@ -123,6 +123,9 @@ def vix_constant_maturity_weights(vix_calendar):
 
     https://www.ipathetn.com/US/16/en/details.app?instrumentId=341408 for VXX information.
 
+    SVIX the same way.  The periods are from the Tuesday prior from last months settlement date to
+    the Tuesday before the current months settlement date.  in special cases it willbe the previous business day. 
+
     Here is roughly how it works.
 
     dt=number of business days in the current roll period
@@ -158,20 +161,23 @@ def vix_constant_maturity_weights(vix_calendar):
 
     df_foo[start_roll_front_month] = np.nan
     for ix in month_to_prior_month_settlement_map.index:
-        start_roll = month_to_prior_month_settlement_map[ix]
+        previous_settlement=month_to_prior_month_settlement_map[ix]
+        start_roll = previous_settlement
         selected = vix_calendar[sd][1] == ix
         df_foo.loc[selected, start_roll_front_month] = start_roll
-        roll_period_trade_days = cfe_exchange_open_days(start_roll, ix) - 1
+        tuesday_before_settlement=ix + pd.DateOffset(-1)
+        #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
+        roll_period_trade_days = cfe_exchange_open_days(start_roll, tuesday_before_settlement) 
         df_foo.loc[selected, rptd] = roll_period_trade_days
 
     df_foo[start_roll_front_month] = pd.to_datetime(df_foo[start_roll_front_month])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_front_month]
-    cdts = "Tenor_Trade_Days"
-    tdts = "Tenor_Days"
+    tenor_tds = "Tenor_Trade_Days"
+    ten_caldays = "Tenor_Days"
 
     fmw = "Front Month Weight"
     smw = "Next Month Weight"
-    trade_days_to_settle = df_foo[tdts] = vix_calendar[tdts][1]
+    trade_days_to_settle = df_foo[tenor_tds] = vix_calendar[tenor_tds][1]
     df_foo[fmw] = front_month_weight = trade_days_to_settle / df_foo[rptd]
     df_foo[smw] = -1 * front_month_weight + 1
     ttr = "Temp Trade Date"

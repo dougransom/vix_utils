@@ -22,8 +22,6 @@ dependencies= [
     "pandas-market-calendars",
     "aiofiles",
     "aiohttp[speedups]",
-    "matplotlib",
-    "scipy",
     "openpyxl",
     "appdirs"]
 
