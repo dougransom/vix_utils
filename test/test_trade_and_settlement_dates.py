@@ -13,7 +13,7 @@ def weights_2023(trade_and_settle_df):
 def test_is_a_dataframe_1(trade_and_settle_df):
     assert isinstance(trade_and_settle_df,pd.DataFrame )
 
-def test_is_a_dataframe_2(ts_2023,weights_2023_06: None):
+def test_is_a_dataframe_2(ts_2023,weights_2023: None):
     assert isinstance(ts_2023,pd.DataFrame )
      
  
@@ -49,7 +49,7 @@ trade_date_data=[ ('2023-06-16','2023-06-21',2),
 @pytest.mark.parametrize("Trade_Date,Tenor_Days_1,Tenor_Days_2",cal_days_data)
 def test_calendar_days_to_expiry(ts_2023,Trade_Date,Tenor_Days_1,Tenor_Days_2):
     with pd.option_context('display.max_rows',None,'display.max_columns',None):
-        row=ts_2023_06.loc[Trade_Date]
+        row=ts_2023.loc[Trade_Date]
         print(f"\nRow\n{row}")    
         assert(Tenor_Days_1 == row['Tenor_Days',1])
         assert(Tenor_Days_2 == row['Tenor_Days',2])
