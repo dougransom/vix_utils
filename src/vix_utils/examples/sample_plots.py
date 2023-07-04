@@ -69,7 +69,7 @@ def main():
         b.plot()
         plt.show()
 
-        c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX']]
+        c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX','OVX']]
         c.plot()
         plt.show()
         d=vix_cash_wide['Close'][['SHORTVOL']]
