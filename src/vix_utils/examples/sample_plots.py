@@ -72,6 +72,14 @@ def main():
         c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX']]
         c.plot()
         plt.show()
+        d=vix_cash_wide['Close'][['SHORTVOL']]
+        d.plot()
+        plt.show()
+
+        e=vix_cash_wide['Close'][['LONGVOL']]
+        e.plot()
+        plt.show()
+
 
         #plot the term structure for Feb 16, 2021
         day_of_interest = '2021-02-16'
