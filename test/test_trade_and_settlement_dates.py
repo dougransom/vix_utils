@@ -9,6 +9,7 @@ ts_2023=pytest.fixture(lambda:vix_futures_trade_dates_and_expiry_dates(2).loc['2
 @pytest.fixture()
 def weights_2023(trade_and_settle_df):
     w=vix_constant_maturity_weights(trade_and_settle_df).loc['2023']
+    return w
 
 def test_is_a_dataframe_1(trade_and_settle_df):
     assert isinstance(trade_and_settle_df,pd.DataFrame )
