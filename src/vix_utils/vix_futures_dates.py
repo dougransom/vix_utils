@@ -212,6 +212,9 @@ def cfe_exchange_open_days(start_date, end_date):
     exchange_open_days = _valid_cfe_days.loc[start_date:end_date]
     return len(exchange_open_days)
 
+def remaining_cfe_exchange_open_days(start_date,end_date):
+    next_day=start_date + pd.DateOffset(1)
+    return cfe_exchange_open_days(next_day,end_date)
 
 @u.timeit()
 def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
@@ -242,17 +245,21 @@ def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
             ix = row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
             sd = vix_futures_expiry_date_from_trade_date(year, month, day, maturity)
-            tds = cfe_exchange_open_days(ix, sd) - 1
+            #use the date following the trade date to count the remaining days until 
+            #expiry.
+
+
+            tds = remaining_cfe_exchange_open_days(ix, sd)
             return sd, tds
 
         df['tds'] = df.index.to_series()  # need the index as values in the applied function
         new_cols = df.apply(add_settle_date_and_trade_days_to_settlement, axis=1, result_type='expand')
         df["Expiry"] = new_cols[0]
-        df["Tenor_Days"] = new_cols[1]
-        df.drop('tds', axis=1)
+        df["Tenor_Trade_Days"] = new_cols[1]
+        #df.drop('tds', axis=1,inplace=True)
         for s in settle_columns:
             df[s] = pd.to_datetime(df[s])
-        df['Tenor_Trade_Days'] = (df['Expiry'] - df.index).dt.days.astype(np.int16)
+        df['Tenor_Days'] = (df['Expiry'] - df.index).dt.days.astype(np.int16)
         return df
 
     months = tuple(range(1, 1 + number_of_futures_maturities))
