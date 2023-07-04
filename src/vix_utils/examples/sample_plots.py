@@ -69,6 +69,10 @@ def main():
         b.plot()
         plt.show()
 
+        c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX']]
+        c.plot()
+        plt.show()
+
         #plot the term structure for Feb 16, 2021
         day_of_interest = '2021-02-16'
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
