@@ -21,6 +21,15 @@ def main():
     'display.width', None,
     'display.max_colwidth', None]
 
+    skipPlot=True       #set to false when you want to see plots
+                        #allows you to skip to a specific plot when toying with the script
+    def plotDF(df):
+        if skipPlot:
+            print(f"\n{stars}Warning, skipPlot for:\n{df}\n{stars}\n")
+            return
+        df.plot()
+        plt.show()
+        
     logging.getLogger().debug("setting pandas options")
     with pd.option_context(*pd_options):
     
@@ -50,33 +59,52 @@ def main():
 
         logging.getLogger().debug(f"\nclose columns: {close.columns}")
 
-        close.plot()
-        plt.show()
+        plotDF(close)
 
         logging.getLogger().debug(f"{stars}\noriginal Vix futures wide columns:\n{original_vix_futures_wide.columns}")
-        m1m2_weighted=vix_utils.continuous_maturity_30day(original_vix_futures_wide)
+        m1m2_weighted=vix_utils.continuous_maturity_one_month(original_vix_futures_wide)
         logging.getLogger().debug(f"{stars}\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
-        wide_with_continuous_futures=vix_utils.append_continuous_maturity_30day(original_vix_futures_wide)
+        wide_with_continuous_futures=vix_utils.append_continuous_maturity_one_month(original_vix_futures_wide)
+        #front two months
         wide_with_continuous_futures_f2m=\
             wide_with_continuous_futures[[1,2,"30 Day Continuous"]].swaplevel(axis=1)[["Close"]].swaplevel(axis=1) 
-        wide_with_continuous_futures_f2m.plot()
-        plt.show()
+
+        plotDF(wide_with_continuous_futures_f2m)        
 
 
         logging.getLogger().debug(f"{stars}\nCash vix\n{vix_cash_wide}")
         b=vix_cash_wide['Close'][['VIX3M','VIX','VIX9D']]
-        b.plot()
-        plt.show()
+        plotDF(b)
+
+        c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX','OVX']]
+        plotDF(c)
+
+        d=vix_cash_wide['Close'][['SHORTVOL']]
+        plotDF(d)
+
+        e=vix_cash_wide['Close'][['LONGVOL']]
+        plotDF(e)
+
 
         #plot the term structure for Feb 16, 2021
-        day_of_interest = '2021-02-16'
+        day_of_interest = '2023-07-05'
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
         cols_to_plot=[1] + ["30 Day Continuous"] + list(range(2,10))
         df_day_of_interest_to_plot=df_day_of_interest.swaplevel(axis=1)[['Close',"Tenor_Days"]].swaplevel(axis=1)[cols_to_plot].swaplevel(axis=1)
-        print(f"{stars}\ndf_day_of_interest_to_plot:\n{df_day_of_interest_to_plot}")
+        df_debug=wide_with_continuous_futures[[1,"30 Day Continuous",2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+
+        with pd.option_context("display.max_columns",None,"display.max_rows",None):
+            print(f"df_day_of_interest{stars}\ndf_day_of_interest")
+            print(f"{stars}\ndf_day_of_interest_to_plot:\n{df_day_of_interest_to_plot}")
+            print(f"Columns\n{df_day_of_interest.columns}")
+            print(f"Index:\n{df_day_of_interest.index}")
+            print(f"df_debug\n{df_debug}")
         #we really need the days until expiry as well, as the x-axis.
-        df_day_of_interest_to_plot.plot(x="Tenor_Days", y="Close", kind = 'scatter', use_index=True)
-        plt.show()
+        skipPlot=False
+        if not skipPlot:
+            df_day_of_interest_to_plot.plot(x="Tenor_Days", y="Close", kind = 'scatter', use_index=True)
+            plt.show()
+
 if __name__=="__main__":
     main()

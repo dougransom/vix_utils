@@ -654,10 +654,13 @@ def pivot_futures_on_monthly_tenor(vix_futures_records:pd.DataFrame)->pd.DataFra
             debug_cols=["File","Tenor_Trade_Days", "Expiry","Close"]
             with pd.option_context('display.max_rows',None):
                 if dups.shape[0]>0:         #a common cause of problems are duplicate trade/tenors.
+                                            #CBOE may publish overlapping files with same dates.
                     logging.warn(f"\n{_stars}Duplicates detected for Trade Date and Tenor\n")
-                    #we know the unstack will fail in this case. let it.
-                dups_str=f"{dups[debug_cols]}"
             
+                dups_str=f"{dups[debug_cols]}"
+            #remove the duplicates https://stackoverflow.com/questions/13035764/remove-pandas-rows-with-duplicate-indices
+            monthly_indexed=monthly_indexed[~monthly_indexed.index.duplicated(keep='first')]
+
             unstacked = monthly_indexed.unstack()
             pivoted=unstacked.swaplevel(0,1,axis=1)
         except Exception as e:

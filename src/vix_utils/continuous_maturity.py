@@ -1,5 +1,6 @@
 from operator import mul
 from functools import partial
+import numpy as np
 from .download_vix_futures import  \
 pivot_futures_on_monthly_tenor
 import pandas as pd
@@ -57,7 +58,7 @@ def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFr
     """
     return do_weighting_months(trades_df,weight_df,_weights_and_tenors_vix_front_months)
 
-def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
+def append_continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
     """
     produces a weighted mean of the two nearest monthly futures (using continous_maturity_30day)
     appends it to the monthly_wide_records.
@@ -70,7 +71,7 @@ def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.Da
    
     """
 
-    cm=continuous_maturity_30day(monthly_wide_records)
+    cm=continuous_maturity_one_month(monthly_wide_records)
     wide_columns=monthly_wide_records[1].columns
     #intersection of columns in the two data frames
      
@@ -95,7 +96,7 @@ def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.Da
 
 
 
-def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:   
+def continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataFrame:   
     """
     produces a weighted mean of the two nearest monthly futures resulting in an average of maturity one month.
     parameters:
@@ -118,7 +119,7 @@ def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame
 
     #we only need the weigths we for dates we have trades
     weights=weights_all[weights_all.index.isin(futures_history.index)]
-
+   
     #select the front two months and the columns that have trade values
     with pd.option_context('display.max_columns',None): 
         logging.debug(f"\n{'*'*50}\nColumns to weight:\n{futures_history}")
@@ -133,8 +134,11 @@ def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame
     
     df_file=front_two_months.swaplevel(axis=1)["File"]
     weighted_values["File"]=df_file[1]+"+"+df_file[2] 
-    weighted_values['Expiry']=weighted_values.index+pd.Timedelta(days=30) 
-    weighted_values["Tenor_Days"]=30
+    
+    weighted_values['Expiry']=weights['Expiry']
+
+
+    weighted_values["Tenor_Days"]=(weighted_values['Expiry']-weighted_values.index).dt.days
 
 
     return weighted_values

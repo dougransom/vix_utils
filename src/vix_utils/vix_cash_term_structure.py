@@ -34,7 +34,7 @@ async def async_get_vix_index_histories():
     download_data_directory=cash_data_directory/"download"
     del data_directory        
     make_dir(download_data_directory)
-    symbols_with_value_only=['VVIX','GVZ']
+    symbols_with_value_only=['VVIX','GVZ','OVX','SHORTVOL','LONGVOL','VXTLT']
 
     symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
     index_history_symbols = symbols_with_value_only + symbols_with_high_low_close  

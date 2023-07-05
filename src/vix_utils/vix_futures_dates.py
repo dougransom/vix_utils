@@ -18,7 +18,8 @@ _last_valid_cfe_day = dt.datetime(_now.year + _years_ahead + 1, 1, 1)
 
 # generate a range that is beyond any possible Expirys for vix futures in the data
 
-_first_vix_futures_date_date = "2005-06-20"
+_first_vix_futures_date_date = "2004-03-26"
+#https://www.cboe.com/tradable_products/vix/vix_futures/specifications/
 
 # don't use this for the date range.  _valid_cfe_days should go a year past the last trade date
 
@@ -123,6 +124,9 @@ def vix_constant_maturity_weights(vix_calendar):
 
     https://www.ipathetn.com/US/16/en/details.app?instrumentId=341408 for VXX information.
 
+    SVIX the same way.  The periods are from the Tuesday prior from last months settlement date to
+    the Tuesday before the current months settlement date.  in special cases it willbe the previous business day. 
+
     Here is roughly how it works.
 
     dt=number of business days in the current roll period
@@ -157,21 +161,26 @@ def vix_constant_maturity_weights(vix_calendar):
     # add the start of roll date for front month
 
     df_foo[start_roll_front_month] = np.nan
-    for ix in month_to_prior_month_settlement_map.index:
-        start_roll = month_to_prior_month_settlement_map[ix]
-        selected = vix_calendar[sd][1] == ix
+    for second_month_settlement in month_to_prior_month_settlement_map.index:
+        front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
+        start_roll = front_month_settlement
+        selected = vix_calendar[sd][1] == front_month_settlement
         df_foo.loc[selected, start_roll_front_month] = start_roll
-        roll_period_trade_days = cfe_exchange_open_days(start_roll, ix) - 1
+      
+        calendar_day_day_before_settlement=second_month_settlement + pd.DateOffset(-1)
+
+        #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
+        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, calendar_day_day_before_settlement) 
         df_foo.loc[selected, rptd] = roll_period_trade_days
 
     df_foo[start_roll_front_month] = pd.to_datetime(df_foo[start_roll_front_month])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_front_month]
-    cdts = "Tenor_Trade_Days"
-    tdts = "Tenor_Days"
+    tenor_tds = "Tenor_Trade_Days"
+    ten_caldays = "Tenor_Days"
 
     fmw = "Front Month Weight"
     smw = "Next Month Weight"
-    trade_days_to_settle = df_foo[tdts] = vix_calendar[tdts][1]
+    trade_days_to_settle = df_foo[tenor_tds] = vix_calendar[tenor_tds][1]
     df_foo[fmw] = front_month_weight = trade_days_to_settle / df_foo[rptd]
     df_foo[smw] = -1 * front_month_weight + 1
     ttr = "Temp Trade Date"
@@ -194,11 +203,18 @@ def vix_constant_maturity_weights(vix_calendar):
             return trade_date_end_of_roll
         except Exception as e:
             pass
+            #we are always going to get some of these at the end, since the dates go past the dates
+            #in the data frames.  they need to be filtered out after.
             # print(f"Error {e} on row {row}")
         return pd.NaT
 
     constant_maturity_dates = df_foo.apply(maturity_date, axis=1, result_type='expand')
-    df_foo["Notional Expiry"] = constant_maturity_dates
+    #remove the NaTs.
+
+    df_foo["Expiry"] = constant_maturity_dates
+    #remove the NaTs.
+    df_foo=df_foo[~constant_maturity_dates.isna()]
+
     df_foo.drop(ttr, axis=1, inplace=True)
     return df_foo
 
@@ -212,6 +228,9 @@ def cfe_exchange_open_days(start_date, end_date):
     exchange_open_days = _valid_cfe_days.loc[start_date:end_date]
     return len(exchange_open_days)
 
+def remaining_cfe_exchange_open_days(start_date,end_date):
+    next_day=start_date + pd.DateOffset(1)
+    return cfe_exchange_open_days(next_day,end_date)
 
 @u.timeit()
 def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
@@ -242,17 +261,21 @@ def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
             ix = row['tds']
             year, month, day = (ix.year, ix.month, ix.day)
             sd = vix_futures_expiry_date_from_trade_date(year, month, day, maturity)
-            tds = cfe_exchange_open_days(ix, sd) - 1
+            #use the date following the trade date to count the remaining days until 
+            #expiry.
+
+
+            tds = remaining_cfe_exchange_open_days(ix, sd)
             return sd, tds
 
         df['tds'] = df.index.to_series()  # need the index as values in the applied function
         new_cols = df.apply(add_settle_date_and_trade_days_to_settlement, axis=1, result_type='expand')
         df["Expiry"] = new_cols[0]
-        df["Tenor_Days"] = new_cols[1]
-        df.drop('tds', axis=1)
+        df["Tenor_Trade_Days"] = new_cols[1]
+        #df.drop('tds', axis=1,inplace=True)
         for s in settle_columns:
             df[s] = pd.to_datetime(df[s])
-        df['Tenor_Trade_Days'] = (df['Expiry'] - df.index).dt.days.astype(np.int16)
+        df['Tenor_Days'] = (df['Expiry'] - df.index).dt.days.astype(np.int16)
         return df
 
     months = tuple(range(1, 1 + number_of_futures_maturities))
