@@ -1,5 +1,6 @@
 from operator import mul
 from functools import partial
+import numpy as np
 from .download_vix_futures import  \
 pivot_futures_on_monthly_tenor
 import pandas as pd
@@ -118,7 +119,7 @@ def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame
 
     #we only need the weigths we for dates we have trades
     weights=weights_all[weights_all.index.isin(futures_history.index)]
-
+   
     #select the front two months and the columns that have trade values
     with pd.option_context('display.max_columns',None): 
         logging.debug(f"\n{'*'*50}\nColumns to weight:\n{futures_history}")
@@ -133,8 +134,11 @@ def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame
     
     df_file=front_two_months.swaplevel(axis=1)["File"]
     weighted_values["File"]=df_file[1]+"+"+df_file[2] 
-    weighted_values['Expiry']=weighted_values.index+pd.Timedelta(days=30) 
-    weighted_values["Tenor_Days"]=30
+    
+    weighted_values['Expiry']=weights['Expiry']
+
+
+    weighted_values["Tenor_Days"]=(weighted_values['Expiry']-weighted_values.index).dt.days
 
 
     return weighted_values

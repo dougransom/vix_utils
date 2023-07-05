@@ -88,15 +88,18 @@ def main():
 
 
         #plot the term structure for Feb 16, 2021
-        day_of_interest = '2021-02-16'
+        day_of_interest = '2021-02-01'
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
         cols_to_plot=[1] + ["30 Day Continuous"] + list(range(2,10))
         df_day_of_interest_to_plot=df_day_of_interest.swaplevel(axis=1)[['Close',"Tenor_Days"]].swaplevel(axis=1)[cols_to_plot].swaplevel(axis=1)
+        df_debug=wide_with_continuous_futures[[1,"30 Day Continuous",2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+
         with pd.option_context("display.max_columns",None,"display.max_rows",None):
             print(f"df_day_of_interest{stars}\ndf_day_of_interest")
             print(f"{stars}\ndf_day_of_interest_to_plot:\n{df_day_of_interest_to_plot}")
             print(f"Columns\n{df_day_of_interest.columns}")
             print(f"Index:\n{df_day_of_interest.index}")
+            print(f"df_debug\n{df_debug}")
         #we really need the days until expiry as well, as the x-axis.
         skipPlot=False
         if not skipPlot:

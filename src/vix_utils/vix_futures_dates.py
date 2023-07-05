@@ -18,7 +18,8 @@ _last_valid_cfe_day = dt.datetime(_now.year + _years_ahead + 1, 1, 1)
 
 # generate a range that is beyond any possible Expirys for vix futures in the data
 
-_first_vix_futures_date_date = "2005-06-20"
+_first_vix_futures_date_date = "2004-03-26"
+#https://www.cboe.com/tradable_products/vix/vix_futures/specifications/
 
 # don't use this for the date range.  _valid_cfe_days should go a year past the last trade date
 
@@ -160,14 +161,16 @@ def vix_constant_maturity_weights(vix_calendar):
     # add the start of roll date for front month
 
     df_foo[start_roll_front_month] = np.nan
-    for ix in month_to_prior_month_settlement_map.index:
-        previous_settlement=month_to_prior_month_settlement_map[ix]
-        start_roll = previous_settlement
-        selected = vix_calendar[sd][1] == ix
+    for second_month_settlement in month_to_prior_month_settlement_map.index:
+        front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
+        start_roll = front_month_settlement
+        selected = vix_calendar[sd][1] == front_month_settlement
         df_foo.loc[selected, start_roll_front_month] = start_roll
-        tuesday_before_settlement=ix + pd.DateOffset(-1)
+      
+        calendar_day_day_before_settlement=second_month_settlement + pd.DateOffset(-1)
+
         #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
-        roll_period_trade_days = cfe_exchange_open_days(start_roll, tuesday_before_settlement) 
+        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, calendar_day_day_before_settlement) 
         df_foo.loc[selected, rptd] = roll_period_trade_days
 
     df_foo[start_roll_front_month] = pd.to_datetime(df_foo[start_roll_front_month])
@@ -200,11 +203,18 @@ def vix_constant_maturity_weights(vix_calendar):
             return trade_date_end_of_roll
         except Exception as e:
             pass
+            #we are always going to get some of these at the end, since the dates go past the dates
+            #in the data frames.  they need to be filtered out after.
             # print(f"Error {e} on row {row}")
         return pd.NaT
 
     constant_maturity_dates = df_foo.apply(maturity_date, axis=1, result_type='expand')
-    df_foo["Notional Expiry"] = constant_maturity_dates
+    #remove the NaTs.
+
+    df_foo["Expiry"] = constant_maturity_dates
+    #remove the NaTs.
+    df_foo=df_foo[~constant_maturity_dates.isna()]
+
     df_foo.drop(ttr, axis=1, inplace=True)
     return df_foo
 

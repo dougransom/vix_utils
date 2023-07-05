@@ -61,10 +61,13 @@ def main():
     print(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
     appended_m1m2=v.append_continuous_maturity_30day(pivoted)
-    appended_m1m2_close=appended_m1m2[[1,2,'30 Day Continuous']].swaplevel(axis=1)['Close']
+    appended_m1m2_close=appended_m1m2[[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
     pstars()
     print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")
-
+    pstars()
+    with pd.option_context("display.max_rows",None,"display.max_columns",None):   
+        df2021_02=appended_m1m2.loc['2021-02'][[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+        print(f"\nappended (2021-02)\n{df2021_02}")
 
 if __name__=="__main__":
     main()
