@@ -57,10 +57,10 @@ def main():
     print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted_two_cols}\ncolumn_index{pivoted_two_cols.columns}")
 
     pstars()
-    m1m2_weighted=v.continuous_maturity_30day(pivoted)
+    m1m2_weighted=v.continuous_maturity_one_month(pivoted)
     print(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
-    appended_m1m2=v.append_continuous_maturity_30day(pivoted)
+    appended_m1m2=v.append_continuous_maturity_one_month(pivoted)
     appended_m1m2_close=appended_m1m2[[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
     pstars()
     print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")

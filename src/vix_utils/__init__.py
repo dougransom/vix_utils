@@ -17,5 +17,5 @@ from .vix_futures_dates import vix_futures_expiry_date_monthly, \
     vix_futures_trade_dates_and_expiry_dates, \
     vix_constant_maturity_weights   
 
-from .continuous_maturity import continuous_maturity_30day,append_continuous_maturity_30day
+from .continuous_maturity import continuous_maturity_one_month,append_continuous_maturity_one_month
 

@@ -97,7 +97,7 @@ def main():
     vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
 
     vix_m1m2_weights = vix_utils.vix_constant_maturity_weights(vix_utils.vix_futures_trade_dates_and_expiry_dates())
-    futures_m1m2=vix_utils.continuous_maturity_30day(vix_monthly_futures_wide)
+    futures_m1m2=vix_utils.continuous_maturity_one_month(vix_monthly_futures_wide)
     if ofile := args.futures_records:
         write_frame(vix_futures, ofile)
 

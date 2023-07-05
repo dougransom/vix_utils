@@ -58,7 +58,7 @@ def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFr
     """
     return do_weighting_months(trades_df,weight_df,_weights_and_tenors_vix_front_months)
 
-def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
+def append_continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
     """
     produces a weighted mean of the two nearest monthly futures (using continous_maturity_30day)
     appends it to the monthly_wide_records.
@@ -71,7 +71,7 @@ def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.Da
    
     """
 
-    cm=continuous_maturity_30day(monthly_wide_records)
+    cm=continuous_maturity_one_month(monthly_wide_records)
     wide_columns=monthly_wide_records[1].columns
     #intersection of columns in the two data frames
      
@@ -96,7 +96,7 @@ def append_continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.Da
 
 
 
-def continuous_maturity_30day(monthly_wide_records : pd.DataFrame)->pd.DataFrame:   
+def continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataFrame:   
     """
     produces a weighted mean of the two nearest monthly futures resulting in an average of maturity one month.
     parameters:

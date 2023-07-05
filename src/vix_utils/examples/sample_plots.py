@@ -62,10 +62,10 @@ def main():
         plotDF(close)
 
         logging.getLogger().debug(f"{stars}\noriginal Vix futures wide columns:\n{original_vix_futures_wide.columns}")
-        m1m2_weighted=vix_utils.continuous_maturity_30day(original_vix_futures_wide)
+        m1m2_weighted=vix_utils.continuous_maturity_one_month(original_vix_futures_wide)
         logging.getLogger().debug(f"{stars}\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
-        wide_with_continuous_futures=vix_utils.append_continuous_maturity_30day(original_vix_futures_wide)
+        wide_with_continuous_futures=vix_utils.append_continuous_maturity_one_month(original_vix_futures_wide)
         #front two months
         wide_with_continuous_futures_f2m=\
             wide_with_continuous_futures[[1,2,"30 Day Continuous"]].swaplevel(axis=1)[["Close"]].swaplevel(axis=1) 
