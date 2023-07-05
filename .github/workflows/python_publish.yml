@@ -21,7 +21,7 @@ jobs:
     - name: Building package with flit
       run: |
             flit build
-    - name: Publishing 📦 to Test PyPI
+    - name: Publishing 📦 to  PyPI
      # Regarding building artifacts within Platform specific environment see https://github.com/pypa/gh-action-pypi-publish#non-goals
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
