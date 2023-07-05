@@ -25,5 +25,10 @@ jobs:
      # Regarding building artifacts within Platform specific environment see https://github.com/pypa/gh-action-pypi-publish#non-goals
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
+<<<<<<< HEAD
         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
         repository_url: https://test.pypi.org/legacy/
+=======
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        repository-url: https://pypi.org/legacy/
+>>>>>>> main
