@@ -58,8 +58,10 @@ def main():
         logging.getLogger().debug(f"{stars}\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
         wide_with_continuous_futures=vix_utils.append_continuous_maturity_30day(original_vix_futures_wide)
+        #front two months
         wide_with_continuous_futures_f2m=\
             wide_with_continuous_futures[[1,2,"30 Day Continuous"]].swaplevel(axis=1)[["Close"]].swaplevel(axis=1) 
+        
         wide_with_continuous_futures_f2m.plot()
         plt.show()
 
@@ -86,7 +88,10 @@ def main():
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
         cols_to_plot=[1] + ["30 Day Continuous"] + list(range(2,10))
         df_day_of_interest_to_plot=df_day_of_interest.swaplevel(axis=1)[['Close',"Tenor_Days"]].swaplevel(axis=1)[cols_to_plot].swaplevel(axis=1)
-        print(f"{stars}\ndf_day_of_interest_to_plot:\n{df_day_of_interest_to_plot}")
+        with pd.option_context("display.max_columns",None):
+            print(f"{stars}\ndf_day_of_interest_to_plot:\n{df_day_of_interest_to_plot}")
+            print(f"Columns\n{df_day_of_interest.columns}")
+            print(f"Index:\n{df_day_of_interest.index}")
         #we really need the days until expiry as well, as the x-axis.
         df_day_of_interest_to_plot.plot(x="Tenor_Days", y="Close", kind = 'scatter', use_index=True)
         plt.show()

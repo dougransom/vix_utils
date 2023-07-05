@@ -62,6 +62,7 @@ def main():
 
     appended_m1m2=v.append_continuous_maturity_30day(pivoted)
     appended_m1m2_close=appended_m1m2[[1,2,'30 Day Continuous']].swaplevel(axis=1)['Close']
+    pstars()
     print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")
 
 
