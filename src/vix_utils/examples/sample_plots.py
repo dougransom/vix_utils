@@ -88,7 +88,7 @@ def main():
 
 
         #plot the term structure for Feb 16, 2021
-        day_of_interest = '2021-02-01'
+        day_of_interest = '2023-07-05'
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
         cols_to_plot=[1] + ["30 Day Continuous"] + list(range(2,10))
         df_day_of_interest_to_plot=df_day_of_interest.swaplevel(axis=1)[['Close',"Tenor_Days"]].swaplevel(axis=1)[cols_to_plot].swaplevel(axis=1)
