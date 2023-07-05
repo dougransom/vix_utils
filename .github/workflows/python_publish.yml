@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  publish:
     # Set up the environment `CI` references the secret `TEST_PYPI_API_TOKEN` in repository settings
     # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#referencing-an-environment
     environment: CI
@@ -26,4 +26,4 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
-        repository-url: https://pypi.org/legacy/
+        repository-url: https://pypi.org/
