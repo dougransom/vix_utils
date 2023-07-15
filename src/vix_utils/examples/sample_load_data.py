@@ -57,8 +57,6 @@ def main():
     indexed_by_tenor=vix_futures_history.set_index(["Trade Date","Tenor_Monthly"])
     print(f"indexed by tenor:\n{indexed_by_tenor}")
 
-    pa=pivoted.to_xarray()
-    print(f"pa\n{pa}")
 
     pivoted_swapped=pivoted.swaplevel(0,1,axis=1)
 
@@ -77,12 +75,12 @@ def main():
     pstars(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
     appended_m1m2=v.append_continuous_maturity_one_month(pivoted)
-    appended_m1m2_close=appended_m1m2[[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+    appended_m1m2_close=appended_m1m2[[1,1.5,2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
     pstars(f"\nappended_m1m2:\n{appended_m1m2}")
 
     closes=appended_m1m2.swaplevel(axis=1)["Close"]
 
-    pstars(f"closes\n{closes}")
+    pstars(f"\ncloses\n{closes}")
     print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")
 
 
@@ -113,7 +111,7 @@ def main():
  
  
     with pd.option_context("display.max_rows",None,"display.max_columns",None):   
-        df2021_02=appended_m1m2.loc['2021-02'][[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+        df2021_02=appended_m1m2.loc['2021-02'][[1,1.5,2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
         print(f"\nappended (2021-02)\n{df2021_02}")
 
  

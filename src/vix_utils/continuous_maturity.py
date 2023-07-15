@@ -61,7 +61,7 @@ def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFr
 def append_continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataFrame:
     """
     produces a weighted mean of the two nearest monthly futures (using continous_maturity_30day)
-    appends it to the monthly_wide_records.
+    appends it to the monthly_wide_records, with Monthly_Tenor of 1.5 (for ease of sorting)
     There will be fewer columns as the result of continous_maturity_30day has fewer columns for a tenor than 
     monthly_wide_records.
     parameters:
@@ -81,11 +81,11 @@ def append_continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->p
     new_df2=new_df1.swaplevel(axis=1)
     #add a level to new_cm
     d={}
-    d["30 Day Continuous"]=new_cm
+    d[1.5]=new_cm
     e=pd.concat(d,axis=1)
 
     #concatenate new_cm (after adding the level of idexing)
-    new_df3=pd.concat([new_df2,e],axis=1)
+    new_df3=pd.concat([new_df2,e],axis=1).sort_index(axis=1)
     return new_df3
 
 
