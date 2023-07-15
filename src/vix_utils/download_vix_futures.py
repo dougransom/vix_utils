@@ -551,6 +551,7 @@ def load_vix_term_structure(forceReload=False):
     last call, if one exists.
 
     """
+    nest_asyncio.apply()
     with asyncio.Runner() as runner:
         return runner.run(async_load_vix_term_structure(forceReload))
 

@@ -23,8 +23,7 @@ dependencies= [
     "aiofiles",
     "aiohttp[speedups]",
     "openpyxl",
-    "appdirs",
-    "nest_asyncio"]
+    "appdirs",]
 
 
 [project.optional-dependencies]
