@@ -92,20 +92,20 @@ async def async_get_vix_index_histories():
     frames=chain(frames1,frames2)
  
 
-    all_vix_cash = pd.concat(frames)
-    all_vix_cash['Trade Date'] = pd.to_datetime(all_vix_cash['Trade Date'])
-    all_vix_cash.set_index('Trade Date')
-    logging.debug(f"\nAll Vix cash \n{all_vix_cash}")
+    all_vix_spot = pd.concat(frames)
+    all_vix_spot['Trade Date'] = pd.to_datetime(all_vix_spot['Trade Date'])
+    all_vix_spot.set_index('Trade Date')
+    logging.debug(f"\nAll Vix spot \n{all_vix_spot}")
 
 
-    return all_vix_cash 
+    return all_vix_spot 
 
-def pivot_cash_term_structure_on_symbol(all_vix_cash):
+def pivot_spot_term_structure_on_symbol(all_vix_cash):
     try:           
         m1=f"all_vix_cash columns index:\n{all_vix_cash.columns}"
-        all_cash_frame = all_vix_cash.set_index(["Trade Date","Symbol"]).unstack()
+        all_spot_frame = all_vix_cash.set_index(["Trade Date","Symbol"]).unstack()
     except Exception as e:
-        logging.error("{e} in pivot_cash_term_structure_on_trade_date\n{m1}\n{m1}")
+        logging.error("{e} in pivot_spot_term_structure_on_trade_date\n{m1}\n{m1}")
         raise e
 
-    return all_cash_frame
+    return all_spot_frame

@@ -34,7 +34,7 @@ def main():
     vix_futures_history=v.load_vix_term_structure()
 
     pstars()
-    wide_cash=v.pivot_cash_term_structure_on_symbol(vix_cash_history)
+    wide_cash=v.pivot_spot_term_structure_on_symbol(vix_cash_history)
     print(f"Wide Vix Cash history\n{wide_cash}\nWide Cash History Index\n{wide_cash.columns}")
 
     pstars()

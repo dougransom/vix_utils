@@ -39,8 +39,8 @@ def main():
         vix_futures_skinny = vix_utils.load_vix_term_structure()
         vix_futures_monthly_skinny=vix_utils.select_monthly_futures(vix_futures_skinny)
         vix_futures_wide=vix_utils.pivot_futures_on_monthly_tenor(vix_futures_monthly_skinny)
-        vix_cash=vix_utils.get_vix_index_histories()
-        vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
+        vix_spot=vix_utils.get_vix_index_histories()
+        vix_spot_wide=vix_utils.pivot_spot_term_structure_on_symbol(vix_spot)
         
         sep_lines = "_"*25+"\n"
 
@@ -68,31 +68,31 @@ def main():
         wide_with_continuous_futures=vix_utils.append_continuous_maturity_one_month(original_vix_futures_wide)
         #front two months
         wide_with_continuous_futures_f2m=\
-            wide_with_continuous_futures[[1,2,"30 Day Continuous"]].swaplevel(axis=1)[["Close"]].swaplevel(axis=1) 
+            wide_with_continuous_futures[[1,2,1.5]].swaplevel(axis=1)[["Close"]].swaplevel(axis=1) 
 
         plotDF(wide_with_continuous_futures_f2m)        
 
 
-        logging.getLogger().debug(f"{stars}\nCash vix\n{vix_cash_wide}")
-        b=vix_cash_wide['Close'][['VIX3M','VIX','VIX9D']]
+        logging.getLogger().debug(f"{stars}\nSpot vix\n{vix_spot_wide}")
+        b=vix_spot_wide['Close'][['VIX3M','VIX','VIX9D']]
         plotDF(b)
 
-        c=vix_cash_wide['Close'][['VXTLT','GVZ','VVIX','OVX']]
+        c=vix_spot_wide['Close'][['VXTLT','GVZ','VVIX','OVX']]
         plotDF(c)
 
-        d=vix_cash_wide['Close'][['SHORTVOL']]
+        d=vix_spot_wide['Close'][['SHORTVOL']]
         plotDF(d)
 
-        e=vix_cash_wide['Close'][['LONGVOL']]
+        e=vix_spot_wide['Close'][['LONGVOL']]
         plotDF(e)
 
 
         #plot the term structure for Feb 16, 2021
         day_of_interest = '2023-07-05'
         df_day_of_interest =wide_with_continuous_futures.loc[[day_of_interest]]
-        cols_to_plot=[1] + ["30 Day Continuous"] + list(range(2,10))
+        cols_to_plot=[1,1.5] +  list(range(2,10))
         df_day_of_interest_to_plot=df_day_of_interest.swaplevel(axis=1)[['Close',"Tenor_Days"]].swaplevel(axis=1)[cols_to_plot].swaplevel(axis=1)
-        df_debug=wide_with_continuous_futures[[1,"30 Day Continuous",2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
+        df_debug=wide_with_continuous_futures[[1,1.5,2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
 
         with pd.option_context("display.max_columns",None,"display.max_rows",None):
             print(f"df_day_of_interest{stars}\ndf_day_of_interest")
