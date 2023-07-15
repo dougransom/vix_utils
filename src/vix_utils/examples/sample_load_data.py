@@ -5,10 +5,11 @@ import asyncio as aio
 
 import logging
 import sys
+from itertools import chain
 stars='*'*80
-def pstars():
+def pstars(toprint=""):
     """Print a line of '*' """ 
-    print(stars)
+    print(f"\n{stars}\n{toprint}")
 
 def main():
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -51,23 +52,70 @@ def main():
     pstars()
     pivoted= v.pivot_futures_on_monthly_tenor(monthly)
     print(f"\npivoted {pivoted}")
+
+    pstars() 
+    indexed_by_tenor=vix_futures_history.set_index(["Trade Date","Tenor_Monthly"])
+    print(f"indexed by tenor:\n{indexed_by_tenor}")
+
+    pa=pivoted.to_xarray()
+    print(f"pa\n{pa}")
+
     pivoted_swapped=pivoted.swaplevel(0,1,axis=1)
 
     pivoted_two_cols=pivoted_swapped[['Close','File']]
-    print(f"The monthlys, with a tenor column index, levels swapped, just a few columns:\n{pivoted_two_cols}\ncolumn_index{pivoted_two_cols.columns}")
+    olhc=["Open","High","Low","Close"]
+    pivoted_ohlc=pivoted_swapped[olhc]
+    vix_ohlc=wide_cash.swaplevel(0,1,axis=1)[["VIX"]].swaplevel(0,1,axis=1)
+    #get the columns correspondenting to futures tenors
 
-    pstars()
+    #replicate in the spot prices
+    
+ 
+
+   
     m1m2_weighted=v.continuous_maturity_one_month(pivoted)
-    print(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
+    pstars(f"\nm1m2 weighted:\n{m1m2_weighted}\ncolumns:\n{m1m2_weighted.columns}")
 
     appended_m1m2=v.append_continuous_maturity_one_month(pivoted)
     appended_m1m2_close=appended_m1m2[[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
-    pstars()
+    pstars(f"\nappended_m1m2:\n{appended_m1m2}")
+
+    closes=appended_m1m2.swaplevel(axis=1)["Close"]
+
+    pstars(f"closes\n{closes}")
     print(f"\nappended m1m2 to wide (close):\n{appended_m1m2_close}")
-    pstars()
+
+
+    vix_cash_history_closes=wide_cash["Close"]
+    spot_symbols=["VIX9D","VIX","VIX3M","GVZ"]  #some symbols to compare with the VIX futures for a basis.
+                                                #the basis that makes sense of course is on the VIX, since the vix futures 
+                                                #are for the VIX spot settlement.
+                                                #there reasonably should be a relationship with the various
+                                                #vix spot indexes and probably a weaker one with GVZ.
+
+
+
+    def add_column_level(df:pd.DataFrame,var_name):
+        df2=pd.DataFrame(df)
+        idx=df2.columns.to_frame()
+        idx.insert(0,"Variable",var_name)
+        df2.columns=pd.MultiIndex.from_frame(idx)
+        return df2 
+
+    vix_basis_by_index=[add_column_level(closes.sub(vix_cash_history_closes[spot_symbol],axis=0),spot_symbol+"_Basis") for spot_symbol in ["VIX9D","VIX","VIX3M","GVZ"]]
+
+    closes=add_column_level(closes,"Futures")
+
+    vix_basis=pd.concat(chain([closes],vix_basis_by_index),axis=1,join="inner")
+    
+    pstars(f"vix_basis{vix_basis}")
+   
+ 
+ 
     with pd.option_context("display.max_rows",None,"display.max_columns",None):   
         df2021_02=appended_m1m2.loc['2021-02'][[1,'30 Day Continuous',2]].swaplevel(axis=1)[['Close','Tenor_Days','Expiry']]
         print(f"\nappended (2021-02)\n{df2021_02}")
 
+ 
 if __name__=="__main__":
     main()
