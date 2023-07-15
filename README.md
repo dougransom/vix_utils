@@ -13,6 +13,7 @@ Vix Cash Data are downloaded from [CBOE Historical Volatility Indexes](https://w
 There is an API for Python to load the data into Pandas DataFrames.  If you do your analysis in Python, use the API.
 
 Since there is no documentation yet, look at the examples in the src/vix_utils/examples folder.
+There is a Jupyter Notebook vix_utils.ipynb in that folder.
 
 *Important note for Juypter notebooks.*  
 You must use  async_get_vix_index_histories and async_load_vix_term_structure 

@@ -21,7 +21,7 @@ def main():
     'display.width', None,
     'display.max_colwidth', None]
 
-    skipPlot=False       #set to false when you want to see plots
+    skipPlot=True       #set to false when you want to see plots
                         #allows you to skip to a specific plot when toying with the script
     def plotDF(df):
         if skipPlot:
@@ -105,6 +105,17 @@ def main():
         if not skipPlot:
             df_day_of_interest_to_plot.plot(x="Tenor_Days", y="Close", kind = 'scatter', use_index=True)
             plt.show()
+            df_s=df_day_of_interest_to_plot.stack(1)
+            df_s.plot.line(x="Tenor_Days", y="Close")
+            plt.show()
+            spot_di=vix_spot_wide.loc[day_of_interest]["Close"][["VIX9D","VIX","VIX3M","VIX6M"]]
+
+            print(f"\nspot\n{spot_di}")
+            spot_df_di=pd.DataFrame(index=[9,30,60,180],data=spot_di.values,columns=['Close'])
+            print(f"\nspot df di\n{spot_df_di}")
+            spot_df_di.plot.line(y='Close')
+            plt.show()
+
 
 if __name__=="__main__":
     main()
