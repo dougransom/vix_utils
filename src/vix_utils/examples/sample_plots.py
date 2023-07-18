@@ -21,7 +21,7 @@ def main():
     'display.width', None,
     'display.max_colwidth', None]
 
-    skipPlot=True       #set to false when you want to see plots
+    skipPlot=False       #set to false when you want to see plots
                         #allows you to skip to a specific plot when toying with the script
     def plotDF(df):
         if skipPlot:

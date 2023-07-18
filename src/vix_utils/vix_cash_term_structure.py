@@ -20,8 +20,9 @@ def get_vix_index_histories():
     Return the history of some volatility indexes.
     """
  
-    with asyncio.Runner() as runner:
-        return runner.run(async_get_vix_index_histories())
+#    with asyncio.Runner() as runner:
+#        return runner.run(async_get_vix_index_histories())
+    return asyncio.run(async_get_vix_index_histories())
 
 async def async_get_vix_index_histories():
     """

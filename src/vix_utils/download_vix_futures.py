@@ -551,9 +551,9 @@ def load_vix_term_structure(forceReload=False):
     last call, if one exists.
 
     """
-    
-    with asyncio.Runner() as runner:
-        return runner.run(async_load_vix_term_structure(forceReload))
+    return asyncio.run(async_load_vix_term_structure(forceReload))
+#    with asyncio.Runner() as runner:
+#        return runner.run(async_load_vix_term_structure(forceReload))
 
 @timeit()    
 async def async_load_vix_term_structure(forceReload=False)->pd.DataFrame:
