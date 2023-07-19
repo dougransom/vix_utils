@@ -116,10 +116,9 @@ def years_and_months():
 
 def archived_years_and_months():
     "For data from https://www.cboe.com/us/futures/market_statistics/historical_data/archive/"
-    #specifically avoid 2013 since the data is dirty and duplicated with the
-    #weekly and monthly data from the current download source.
+ 
 
-    return list(itertools.product(range(2004,2013),range(1,13)))
+    return list(itertools.product(range(2004,2014),range(1,13)))
 
 def years_and_weeks():
     now = dt.datetime.now()
@@ -320,7 +319,8 @@ def downloaded_file_paths(data_dir:Path)->tuple[Path,Path,Path]:
         folders_contents=tuple( list(the_dir.glob("*.csv")) for the_dir in (a,b,c))
 
         return folders_contents  
-
+_header_match_str="Trade Date,"
+_head_match_len=len(_header_match_str)
 async def download(vixutil_path:Path):
     """
     Download the vix futures historis we don't have up todate.
@@ -338,14 +338,20 @@ async def download(vixutil_path:Path):
 
 
         #need to find lines with a trailing "," and remove it.  There are a bunch in the 
-        #archived data
+        #archived data.
+        #we also need to throw away lines before the line that starts with Trade Date.
         _,_,amfns=downloaded_file_paths(vixutil_path)
+        
+        def unmatched_header_row(a_line):
+            return a_line[0:_head_match_len]!=_header_match_str
+
         for fn in amfns:
             with open(fn,'r') as fin:
                 data=fin.read().splitlines(True)
 
+            filtered_preamble=itertools.dropwhile(unmatched_header_row,data)
             with open(fn,'w') as fout:
-                for line in data:
+                for line in filtered_preamble:
                     updated_line=",".join(line.split(",")[0:11]).strip()
                     print(updated_line,file=fout)
 
@@ -400,8 +406,9 @@ def read_csv_future_file(future_path:Path,monthly_expiry_date_strings:frozenset)
     try:
         df = pd.read_csv(future_path,parse_dates=[0])
     except Exception as e:
-        logging.warn(f"\n {e}\n reading\n{future_path} ")
-        raise
+        logging.warn(f"\n{e}\n reading\n{future_path}, skipping ")
+        return pd.DataFrame(columns=[["Trade Date"]])
+
     fn=future_path.name
     expiry_date_str=settlement_date_str_from_fn(fn)
     #week_number  TODO FIGURE THIS OUT

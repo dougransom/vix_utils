@@ -83,7 +83,7 @@ def test_all_dates():
     diff2=ts.index.difference(sv.index).to_list()
     diff3=ts.index.symmetric_difference(sv.index).to_list()
     if(len(diff3) >0 ):
-        print(f"Missing from spot\n{diff1}\nMissing from Futures\n{diff2}\nMissing from either\n{diff3}")
+        print(f"Missing from futures\n{diff1}\n\nMissing from Spot\n{diff2}\n\nMissing from either\n{diff3}")
         pass  #make it easy to put a breakpoint
     assert len(diff3) == 0
 

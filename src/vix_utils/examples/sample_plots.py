@@ -116,6 +116,7 @@ def main():
             spot_df_di.plot.line(y='Close')
             plt.show()
 
-
+import logging
 if __name__=="__main__":
+    logging.Logger()
     main()

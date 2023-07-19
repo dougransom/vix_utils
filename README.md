@@ -71,5 +71,14 @@ However, new features and bug fixes should be developed with [Test Driven Develo
 Source is in `src/vix_utils/examples`
  
 ~~~
+## Data Notes
+These dates appear to be missing from the CBOE Data.
+At some point they need to be patched in if they exist.
+```
+[Timestamp('2006-11-10 00:00:00'), Timestamp('2007-01-03 00:00:00'), Timestamp('2021-04-02 00:00:00'), Timestamp('2021-12-24 00:00:00')]
+```
+
+~~~
 ## Developing
 https://numpydoc.readthedocs.io/en/latest/format.html
+
