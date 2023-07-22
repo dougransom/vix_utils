@@ -77,7 +77,7 @@ At some point they need to be patched in if they exist.
 ```
 [Timestamp('2006-11-10 00:00:00'), Timestamp('2007-01-03 00:00:00'), Timestamp('2021-04-02 00:00:00'), Timestamp('2021-12-24 00:00:00')]
 ```
-
+There seem to be  a few dates where spot indexes are missing, you will have to workaround by using fill feature of Pandas datafame, or skip those days, in any analysis.
 ~~~
 ## Developing
 https://numpydoc.readthedocs.io/en/latest/format.html

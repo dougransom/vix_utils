@@ -74,7 +74,7 @@ def main():
 
 
         logging.getLogger().debug(f"{stars}\nSpot vix\n{vix_spot_wide}")
-        b=vix_spot_wide['Close'][['VIX3M','VIX','VIX9D']]
+        b=vix_spot_wide['Close'][['VIX3M','VIX','VIX9D','VIX1D']]
         plotDF(b)
 
         c=vix_spot_wide['Close'][['VXTLT','GVZ','VVIX','OVX']]

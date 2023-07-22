@@ -37,7 +37,7 @@ async def async_get_vix_index_histories():
     make_dir(download_data_directory)
     symbols_with_value_only=['VVIX','GVZ','OVX','SHORTVOL','LONGVOL','VXTLT']
 
-    symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
+    symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M","VIX1D" ]
     index_history_symbols = symbols_with_value_only + symbols_with_high_low_close  
     index_history_urls = [f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv" for symbol in index_history_symbols]
 
@@ -75,7 +75,7 @@ async def async_get_vix_index_histories():
         
                 
         # download all of them
-        logging.debug(f"Skipping read from web")
+
         download_coro = (download_csv_from_web(url) for url in index_history_urls)
         l = await asyncio.gather(*download_coro)
 
@@ -97,8 +97,7 @@ async def async_get_vix_index_histories():
     all_vix_spot['Trade Date'] = pd.to_datetime(all_vix_spot['Trade Date'])
     all_vix_spot.set_index('Trade Date')
     logging.debug(f"\nAll Vix spot \n{all_vix_spot}")
-
-
+ 
     return all_vix_spot 
 
 def pivot_spot_term_structure_on_symbol(all_vix_cash):

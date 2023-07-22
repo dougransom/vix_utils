@@ -72,7 +72,11 @@ def test_read_future_file_may_2007(tmp_path):
             bogus_data=df2.loc[date_str]
             print(f"\n{date_str}: Bogus data:\n{bogus_data}")
    
-def test_all_dates():
+def debug_all_dates():
+    """
+    We aren't making this a test because there are just missing data or data over various ranges so they won't 
+    necessarly match.  
+    """
     pass
     spot=get_vix_index_histories().set_index("Trade Date")
     sv=spot[spot.Symbol=='SHORTVOL'][["Close"]]
@@ -87,5 +91,5 @@ def test_all_dates():
         pass  #make it easy to put a breakpoint
     assert len(diff3) == 0
 
-
-test_all_dates()
+if __name__=="__main__":
+    debug_all_dates()
