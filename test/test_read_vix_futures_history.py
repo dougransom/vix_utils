@@ -1,5 +1,6 @@
 import pytest
 from vix_utils.download_vix_futures import read_csv_future_file,read_csv_future_files
+from vix_utils import load_vix_term_structure,get_vix_index_histories
 import pandas as pd
 from pathlib import Path
 from shutil import copy,copytree
@@ -71,4 +72,24 @@ def test_read_future_file_may_2007(tmp_path):
             bogus_data=df2.loc[date_str]
             print(f"\n{date_str}: Bogus data:\n{bogus_data}")
    
- 
+def debug_all_dates():
+    """
+    We aren't making this a test because there are just missing data or data over various ranges so they won't 
+    necessarly match.  
+    """
+    pass
+    spot=get_vix_index_histories().set_index("Trade Date")
+    sv=spot[spot.Symbol=='SHORTVOL'][["Close"]]
+    print(f"sv\n{sv}")
+    ts=load_vix_term_structure().set_index("Trade Date")
+    print(f"ts\n{ts}")
+    diff1=sv.index.difference(ts.index).to_list()
+    diff2=ts.index.difference(sv.index).to_list()
+    diff3=ts.index.symmetric_difference(sv.index).to_list()
+    if(len(diff3) >0 ):
+        print(f"Missing from futures\n{diff1}\n\nMissing from Spot\n{diff2}\n\nMissing from either\n{diff3}")
+        pass  #make it easy to put a breakpoint
+    assert len(diff3) == 0
+
+if __name__=="__main__":
+    debug_all_dates()

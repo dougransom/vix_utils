@@ -13,6 +13,7 @@ Vix Cash Data are downloaded from [CBOE Historical Volatility Indexes](https://w
 There is an API for Python to load the data into Pandas DataFrames.  If you do your analysis in Python, use the API.
 
 Since there is no documentation yet, look at the examples in the src/vix_utils/examples folder.
+There is a Jupyter Notebook vix_utils.ipynb in that folder.
 
 *Important note for Juypter notebooks.*  
 You must use  async_get_vix_index_histories and async_load_vix_term_structure 
@@ -70,5 +71,14 @@ However, new features and bug fixes should be developed with [Test Driven Develo
 Source is in `src/vix_utils/examples`
  
 ~~~
+## Data Notes
+These dates appear to be missing from the CBOE Data.
+At some point they need to be patched in if they exist.
+```
+[Timestamp('2006-11-10 00:00:00'), Timestamp('2007-01-03 00:00:00'), Timestamp('2021-04-02 00:00:00'), Timestamp('2021-12-24 00:00:00')]
+```
+There seem to be  a few dates where spot indexes are missing, you will have to workaround by using fill feature of Pandas datafame, or skip those days, in any analysis.
+~~~
 ## Developing
 https://numpydoc.readthedocs.io/en/latest/format.html
+

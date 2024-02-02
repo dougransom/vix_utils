@@ -48,12 +48,12 @@ parser.add_argument("-w",
 
 parser.add_argument("-c",
                     metavar="output_file", 
-                    dest="cash_records", help=f"""output the vix cash term structure a file in record format. 
+                    dest="spot_records", help=f"""output the vix spot term structure a file in record format. 
         {output_format_help}.  Some other indexes from CBOE
         will also be included.  {output_format_help} """)
 parser.add_argument("-d", 
                     metavar="output_file",
-                    dest="cash_wide", help=f"""output the vix cash term structure a file in wide format,with a column for each index. 
+                    dest="spot_wide", help=f"""output the vix spot term structure a file in wide format,with a column for each index. 
         {output_format_help}.  Some other indexes from CBOE
         will also be included.  {output_format_help} """)
 
@@ -92,9 +92,9 @@ def main():
     logger.setLevel(args.loglevel)
 
     vix_futures=vix_utils.load_vix_term_structure()
-    vix_cash=vix_utils.get_vix_index_histories()
+    vix_spot=vix_utils.get_vix_index_histories()
     vix_monthly_futures_wide=vix_utils.pivot_futures_on_monthly_tenor(vix_futures)
-    vix_cash_wide=vix_utils.pivot_cash_term_structure_on_symbol(vix_cash)
+    vix_spot_wide=vix_utils.pivot_spot_term_structure_on_symbol(vix_spot)
 
     vix_m1m2_weights = vix_utils.vix_constant_maturity_weights(vix_utils.vix_futures_trade_dates_and_expiry_dates())
     futures_m1m2=vix_utils.continuous_maturity_one_month(vix_monthly_futures_wide)
@@ -104,11 +104,11 @@ def main():
     if ofile := args.futures_wide:
         write_frame(vix_monthly_futures_wide, ofile)
 
-    if ofile := args.cash_records:
-        write_frame(vix_cash,ofile)
+    if ofile := args.spot_records:
+        write_frame(vix_spot,ofile)
 
-    if ofile := args.cash_wide:
-        write_frame(vix_cash_wide,ofile)
+    if ofile := args.spot_wide:
+        write_frame(vix_spot_wide,ofile)
 
     if ofile := args.w_m1m2:
         write_frame(vix_m1m2_weights,ofile)   

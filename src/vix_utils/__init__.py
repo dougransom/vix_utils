@@ -2,7 +2,7 @@
 A library for preparing   VIX Futures and Cash Term Structures for analysis,
 including a  continuous maturity VIX Futures term structure.
 """
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 from .download_vix_futures import  \
 pivot_futures_on_monthly_tenor,select_monthly_futures,async_load_vix_term_structure,load_vix_term_structure
@@ -10,7 +10,7 @@ pivot_futures_on_monthly_tenor,select_monthly_futures,async_load_vix_term_struct
 from .vix_cash_term_structure import \
     async_get_vix_index_histories,  \
     get_vix_index_histories,    \
-    pivot_cash_term_structure_on_symbol
+    pivot_spot_term_structure_on_symbol
 
 from .vix_futures_dates import vix_futures_expiry_date_monthly, \
     vix_futures_expiry_date_from_trade_date, \

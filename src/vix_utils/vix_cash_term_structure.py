@@ -20,8 +20,9 @@ def get_vix_index_histories():
     Return the history of some volatility indexes.
     """
  
-    with asyncio.Runner() as runner:
-        return runner.run(async_get_vix_index_histories())
+#    with asyncio.Runner() as runner:
+#        return runner.run(async_get_vix_index_histories())
+    return asyncio.run(async_get_vix_index_histories())
 
 async def async_get_vix_index_histories():
     """
@@ -36,7 +37,7 @@ async def async_get_vix_index_histories():
     make_dir(download_data_directory)
     symbols_with_value_only=['VVIX','GVZ','OVX','SHORTVOL','LONGVOL','VXTLT']
 
-    symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M" ]
+    symbols_with_high_low_close=['VIX', 'VIX9D', "VIX3M", "VIX6M","VIX1D" ]
     index_history_symbols = symbols_with_value_only + symbols_with_high_low_close  
     index_history_urls = [f"https://cdn.cboe.com/api/global/us_indices/daily_prices/{symbol}_History.csv" for symbol in index_history_symbols]
 
@@ -74,7 +75,7 @@ async def async_get_vix_index_histories():
         
                 
         # download all of them
-        logging.debug(f"Skipping read from web")
+
         download_coro = (download_csv_from_web(url) for url in index_history_urls)
         l = await asyncio.gather(*download_coro)
 
@@ -92,20 +93,19 @@ async def async_get_vix_index_histories():
     frames=chain(frames1,frames2)
  
 
-    all_vix_cash = pd.concat(frames)
-    all_vix_cash['Trade Date'] = pd.to_datetime(all_vix_cash['Trade Date'])
-    all_vix_cash.set_index('Trade Date')
-    logging.debug(f"\nAll Vix cash \n{all_vix_cash}")
+    all_vix_spot = pd.concat(frames)
+    all_vix_spot['Trade Date'] = pd.to_datetime(all_vix_spot['Trade Date'])
+    all_vix_spot.set_index('Trade Date')
+    logging.debug(f"\nAll Vix spot \n{all_vix_spot}")
+ 
+    return all_vix_spot 
 
-
-    return all_vix_cash 
-
-def pivot_cash_term_structure_on_symbol(all_vix_cash):
+def pivot_spot_term_structure_on_symbol(all_vix_cash):
     try:           
         m1=f"all_vix_cash columns index:\n{all_vix_cash.columns}"
-        all_cash_frame = all_vix_cash.set_index(["Trade Date","Symbol"]).unstack()
+        all_spot_frame = all_vix_cash.set_index(["Trade Date","Symbol"]).unstack()
     except Exception as e:
-        logging.error("{e} in pivot_cash_term_structure_on_trade_date\n{m1}\n{m1}")
+        logging.error("{e} in pivot_spot_term_structure_on_trade_date\n{m1}\n{m1}")
         raise e
 
-    return all_cash_frame
+    return all_spot_frame
