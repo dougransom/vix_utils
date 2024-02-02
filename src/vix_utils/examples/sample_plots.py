@@ -118,5 +118,5 @@ def main():
 
 import logging
 if __name__=="__main__":
-    logging.Logger()
+    logging.getLogger("vix_utils")
     main()
