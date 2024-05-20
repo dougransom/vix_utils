@@ -162,7 +162,7 @@ def generate_monthly_url_dates():
      """
      Returns  the possible monthly urls and the date strings for all years and months in the default range.
      """
-     return (generate_monthly_url_date(y,m) for y,m in years_and_months)
+     return (generate_monthly_url_date(y,m) for y,m in years_and_months())
 
 def generate_weekly_url_date(date):
     """
