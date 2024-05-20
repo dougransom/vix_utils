@@ -81,7 +81,7 @@ def vix_futures_expiry_date_monthly(year: int, month: int):
 
     futures_expiry_date = option_expiry_date - dt.timedelta(days=30)
     # also check for a holiday on the 30 days before the 3d friday
-    if friday_expiration and not any(_valid_cfe_days.isin([option_expiry_date])):
+    if friday_expiration and not any(_valid_cfe_days.isin([futures_expiry_date])):
         futures_expiry_date = futures_expiry_date - dt.timedelta(days=1)
 
     return futures_expiry_date
