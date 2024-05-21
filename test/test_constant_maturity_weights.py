@@ -33,7 +33,10 @@ def test_weights_in_range(m1m2_weights : pd.DataFrame,column):
     weights_out_of_range=m1m2_weights[negative_weights_sel|weights_gt_1_sel]
     
     with pd.option_context('display.max_rows',None,'display.max_columns',None):
-        assert weights_out_of_range.empty, f"{column} should be between 0 and 1:  {weights_out_of_range}"
+        if not weights_out_of_range.empty:
+             print(f"test_weights_in_range{column}\n:{weights_out_of_range}")
+
+    assert weights_out_of_range.empty, f"{column} should be between 0 and 1:  {weights_out_of_range}"
 
 def test_weights_sum_to_one(m1m2_weights : pd.DataFrame):
     ''' Verify the weights of two futures to produce a weighted maturity sum to one'''

@@ -11,10 +11,10 @@ from .location import data_dir
 _cfe_calendar = mcal.get_calendar('CFE')
 _now = dt.datetime.now()
 
-_years_ahead = 5
-_future_date = dt.datetime(_now.year + _years_ahead, 1, 1)
+_years_ahead : int = 5
+_future_date : dt.datetime = dt.datetime(_now.year + _years_ahead, 1, 1)
 # must be 1 year past _future_date
-_last_valid_cfe_day = dt.datetime(_now.year + _years_ahead + 1, 1, 1)
+_last_valid_cfe_day : dt.datetime = dt.datetime(_now.year + _years_ahead + 1, 1, 1)
 
 # generate a range that is beyond any possible Expirys for vix futures in the data
 
@@ -23,7 +23,7 @@ _first_vix_futures_date_date = "2004-03-26"
 
 # don't use this for the date range.  _valid_cfe_days should go a year past the last trade date
 
-_valid_cfe_days = pd.DatetimeIndex(
+_valid_cfe_days : pd.DatetimeIndex = pd.DatetimeIndex(
     _cfe_calendar.valid_days(_first_vix_futures_date_date, end_date=_last_valid_cfe_day).date).to_series().sort_index()
 
 
@@ -56,7 +56,7 @@ def vix_futures_expiry_date_monthly(year: int, month: int):
 
 
     """
-    c = cal.Calendar(firstweekday=cal.SUNDAY)
+    c : cal.Calendar = cal.Calendar(firstweekday=cal.SUNDAY)
     next_month = month + 1
 
     # does the option series the future settles on  settle next year?
@@ -65,21 +65,21 @@ def vix_futures_expiry_date_monthly(year: int, month: int):
     next_month = next_month % 12 if options_next_year else next_month
     options_year = year + 1 if options_next_year else year  # keep for debugging
 
-    m = c.monthdayscalendar(options_year, next_month)
-    md = c.monthdatescalendar(options_year, next_month)
+    m : list[list[int]] = c.monthdayscalendar(options_year, next_month)
+    md : list[list[dt.date]] = c.monthdatescalendar(options_year, next_month)
 
     friday_index = -2
     # 2 to index the 3d week, 0 based index for m
     week_index = 2 if m[0][friday_index] != 0 else 3
     # third_friday unused, just for easier debugging to have.
-    third_friday = m[week_index][friday_index]              # keep for debugging
-    option_expiry_date = md[week_index][friday_index]
-    friday_expiration = any(_valid_cfe_days.isin([option_expiry_date]))
+    third_friday : int = m[week_index][friday_index]              # keep for debugging
+    option_expiry_date : dt.date = md[week_index][friday_index]
+    friday_expiration : bool = any(_valid_cfe_days.isin([option_expiry_date]))
     if not friday_expiration:
         # the preceding day will be the option expiry date
         option_expiry_date = option_expiry_date - dt.timedelta(days=1)
 
-    futures_expiry_date = option_expiry_date - dt.timedelta(days=30)
+    futures_expiry_date : dt.date = option_expiry_date - dt.timedelta(days=30)
     # also check for a holiday on the 30 days before the 3d friday
     if friday_expiration and not any(_valid_cfe_days.isin([futures_expiry_date])):
         futures_expiry_date = futures_expiry_date - dt.timedelta(days=1)
@@ -108,7 +108,7 @@ def vix_futures_expiry_date_from_trade_date(year, month, day, tenor):
     return vix_futures_expiry_date_monthly(year_of_expiry, month_of_expiry)
 
 
-def vix_constant_maturity_weights(vix_calendar):
+def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     """
     :param vix_calendar:  the DataFrame returned by  vix_futures_trade_dates_and_expiry_dates
     :return: a DataFrame containting the weights required to interpolate between the tenors of trading tenors of
@@ -157,6 +157,10 @@ def vix_constant_maturity_weights(vix_calendar):
     df_foo[rptd] = -100001  # just a nonsense number we can identify
 
     df_foo[rptd] = df_foo[rptd].astype(int)
+
+
+    df_foo[rpcd] = -999990  # another nonsense number we can identify
+    df_foo[rpcd] = df_foo[rpcd].astype(int)  # another nonsense number we can identify
 
     # add the start of roll date for front month
 
@@ -232,8 +236,9 @@ def remaining_cfe_exchange_open_days(start_date,end_date):
     next_day=start_date + pd.DateOffset(1)
     return cfe_exchange_open_days(next_day,end_date)
 
+
 @u.timeit()
-def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
+def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities:int = 9) -> pd.DataFrame:
     f"""
     :param number_of_futures_maturities:
         :return:  a data frame with an index of trade date and maturity (in months) and a value of the Expiry.  
@@ -243,7 +248,24 @@ def vix_futures_trade_dates_and_expiry_dates(number_of_futures_maturities=9):
         """
     # by trial and error, this gives us the day
     # careful to select the portion of the valid dates before _future_date
-    trade_dates = _valid_cfe_days[:_future_date]
+    trade_dates :pd.DatetimeIndex = _valid_cfe_days[:_future_date]
+    return _vix_futures_trade_dates_and_expiry_dates_for_dates(trade_dates,number_of_futures_maturities)
+
+@u.timeit()
+def _vix_futures_trade_dates_and_expiry_dates_for_dates(trade_dates : pd.DatetimeIndex,number_of_futures_maturities:int = 9) -> pd.DataFrame:
+    f"""
+    :param trade_dates:  a subset of dates from _valid_cfe_days
+    :param number_of_futures_maturities:
+        :return:  a data frame with an index of trade date and maturity (in months) and a value of the Expiry.  
+                   We refer to a DataFrame in this format as a wide vix calendar or wide settlement calendar..
+                   The dates will include all past dates which the VIX futures have traded, and future dates until
+                    {_future_date}.
+
+        Library consumers should prefer vix_futures_trade_dates_and_expiry_dates.
+
+        """
+    # by trial and error, this gives us the day
+    # careful to select the portion of the valid dates before _future_date
     ii = pd.Index(trade_dates, name="Trade Date")
 
     @u.timeit()
