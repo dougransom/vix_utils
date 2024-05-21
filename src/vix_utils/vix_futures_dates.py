@@ -227,6 +227,17 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 def pivot_on_contract_maturity(df):
     return df.reset_index().pivot(columns="Contract Month", index="Trade Date")
 
+def cfe_exchange_open_dates(selection_slice : slice)  -> pd.DatetimeIndex:
+    """
+    Return the dates, sorted, that the CFE is open, based on 
+    partial string indexing (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#partial-string-indexing). 
+
+    Pass in a slice object that can select from a DateTimeIndex.  like slice('2024-04','2024-04') for April 2024, or slice(None,'2024-04') for
+    all dates until and including April 2024.
+    Pass in both Dates unless you want all dates before or all dates after the partial string index supplied.   
+    
+    """
+    return _valid_cfe_days.loc[selection_slice]
 
 def cfe_exchange_open_days(start_date, end_date):
     exchange_open_days = _valid_cfe_days.loc[start_date:end_date]
@@ -261,7 +272,7 @@ def _vix_futures_trade_dates_and_expiry_dates_for_dates(trade_dates : pd.Datetim
                    The dates will include all past dates which the VIX futures have traded, and future dates until
                     {_future_date}.
 
-        Library consumers should prefer vix_futures_trade_dates_and_expiry_dates.
+        Library consumers should prefer vix_futures_trade_dates_and_expiry_dates.  
 
         """
     # by trial and error, this gives us the day
