@@ -145,10 +145,13 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     # create a map from Expirys to the previous Expirys
     # this is done by looking at month 2 settlment dates, and finding the month 1 Expiry
 
-    start_roll_front_month = "Start Roll Front Month"
+    start_roll_col : str = "Start Roll"
+    end_roll_col : str = "Start Roll"
+
     sd = "Expiry"
     rptd = "Roll Period Trade Days"
     rpcd = "Roll Period Calendar Days"
+    rrptd = "Remaining Roll Period Trade Days"
     settle_dates_map = vix_calendar[sd].drop_duplicates().dropna()
     month_to_prior_month_settlement_map = settle_dates_map.set_index(2)[1]
     cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
@@ -164,30 +167,74 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
     # add the start of roll date for front month
 
-    df_foo[start_roll_front_month] = np.nan
+    df_foo[start_roll_col] = np.nan
     for second_month_settlement in month_to_prior_month_settlement_map.index:
         front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
-        start_roll = front_month_settlement
+        #https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
+        #the Roll Period starts after the
+        #close on the Tuesday prior to the monthly Chicago Board Options Exchange (Cboe) VIX Futures 
+        #Settlement Date
+        #a little ambigous if a tuesday is a holiday.
+        day_before_front_month_settlement = front_month_settlement + pd.DateOffset(-1)
+        
+        front_month_settlement.day_of_week
+        #days of weeks start at 0 for Monday
+
+        #it is going to be negative, because we are looking for the days until the preceeding tuesday
+        days_until_tuesday_front_month = 1-front_month_settlement.day_of_week
+        
+
+        start_roll_date : pd.Timestamp = front_month_settlement + pd.DateOffset(days_until_tuesday_front_month)
+
         selected = vix_calendar[sd][1] == front_month_settlement
-        df_foo.loc[selected, start_roll_front_month] = start_roll
+
+        df_foo.loc[selected, start_roll_col] = start_roll_date
+
+        #it is going to be negative, because we are looking for the days until the preceeding tuesday
+
+        days_until_tuesday_second_month = 1-front_month_settlement.day_of_week
       
-        calendar_day_day_before_settlement=second_month_settlement + pd.DateOffset(-1)
+        end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
+
+        df_foo[end_roll_col] = end_roll
 
         #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
-        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, calendar_day_day_before_settlement) 
+        #includes first day of the roll period, but excludes the last.
+
+        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, end_roll + pd.DateOffset(-1)) 
         df_foo.loc[selected, rptd] = roll_period_trade_days
 
-    df_foo[start_roll_front_month] = pd.to_datetime(df_foo[start_roll_front_month])
-    df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_front_month]
+    df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
+    df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
     ten_caldays = "Tenor_Days"
 
     fmw = "Front Month Weight"
     smw = "Next Month Weight"
     trade_days_to_settle = df_foo[tenor_tds] = vix_calendar[tenor_tds][1]
+
+    #The total number of business days within a Roll Period beginning with, and including, the 
+    #following business day and ending with, but excluding, the following Cboe VIX Futures 
+    #Settlement Date. The number of business days includes a new holiday introduced intra-month 
+    #up to the business day proceeding such a holiday
+
+
+    df_foo["Trade_Day_Plus_1"]=df_foo.index + pd.DateOffset(1)
+    df_foo["End_Roll_Minus_1"]= end_roll + pd.DateOffset(-1)
+    df_foo['Settle_1_Minus_1']=df_foo["Settle 1"] + pd.DateOffset(-1)
+
+    def remaining_roll_period_trade_days_on_row(row):
+        return cfe_exchange_open_days(row["Trade_Day_Plus_1"],row['Settle_1_Minus_1'])
+
+    remaining_roll_period_trade_days : pd.DataFrame    
+    df_foo[rrptd]=remaining_roll_period_trade_days=df_foo.apply(remaining_roll_period_trade_days_on_row,axis=1, result_type='expand')
+
+
     front_month_weights : pd.Series
     next_month_weights : pd.Series
-    df_foo[fmw] = front_month_weights = trade_days_to_settle / df_foo[rptd]
+
+
+    df_foo[fmw] = front_month_weights = remaining_roll_period_trade_days / df_foo[rptd]
     df_foo[smw] = next_month_weights  = -1 * front_month_weights + 1
 
 
