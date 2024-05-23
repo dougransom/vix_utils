@@ -185,8 +185,16 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     fmw = "Front Month Weight"
     smw = "Next Month Weight"
     trade_days_to_settle = df_foo[tenor_tds] = vix_calendar[tenor_tds][1]
-    df_foo[fmw] = front_month_weight = trade_days_to_settle / df_foo[rptd]
-    df_foo[smw] = -1 * front_month_weight + 1
+    front_month_weights : pd.Series
+    next_month_weights : pd.Series
+    df_foo[fmw] = front_month_weights = trade_days_to_settle / df_foo[rptd]
+    df_foo[smw] = next_month_weights  = -1 * front_month_weights + 1
+
+
+    assert front_month_weights.max() <= 1
+    assert front_month_weights.min() > 0
+
+
     ttr = "Temp Trade Date"
     df_foo[ttr] = df_foo.index.to_series()
     #    temp_tdts="Temporary Tenor_Days"

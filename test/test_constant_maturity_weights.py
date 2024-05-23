@@ -1,6 +1,7 @@
 import pytest
 import vix_utils as vu
-from vix_utils.vix_futures_dates import vix_constant_maturity_weights
+from vix_utils.vix_futures_dates import vix_constant_maturity_weights,_vix_futures_trade_dates_and_expiry_dates_for_dates
+
 import pandas as pd
 pd.set_option('display.max_rows',5)
 pd.set_option('display.max_columns',None)
@@ -15,6 +16,17 @@ pd.set_option('display.max_columns',None)
 @pytest.fixture 
 def vix_dates():
     return vu.vix_futures_dates.vix_futures_trade_dates_and_expiry_dates()
+
+def test_weights_april_15_to_26_2024():
+   test_dates=vu.vix_futures_dates.cfe_exchange_open_dates(slice('2024-04-15','2024-04-26'))
+   dates_for_weights   = _vix_futures_trade_dates_and_expiry_dates_for_dates(test_dates)
+
+   print(f"dates testing in april:\n{test_dates}\ndates_for_weights:\n{dates_for_weights}\n")
+
+   weights=vix_constant_maturity_weights(dates_for_weights)
+   print(f"Weights:\n{weights}")
+
+
 
 @pytest.fixture
 def m1m2_weights(vix_dates):
