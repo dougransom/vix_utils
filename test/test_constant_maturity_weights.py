@@ -17,8 +17,8 @@ pd.set_option('display.max_columns',None)
 def vix_dates():
     return vu.vix_futures_dates.vix_futures_trade_dates_and_expiry_dates()
 
-def test_weights_april_15_to_26_2024():
-   test_dates=vu.vix_futures_dates.cfe_exchange_open_dates(slice('2024-04-15','2024-04-26'))
+def test_weights_april_15_to_22_2024():
+   test_dates=vu.vix_futures_dates.cfe_exchange_open_dates(slice('2024-04-15','2024-04-22'))
    dates_for_weights   = _vix_futures_trade_dates_and_expiry_dates_for_dates(test_dates)
 
    print(f"dates testing in april:\n{test_dates}\ndates_for_weights:\n{dates_for_weights}\n")

@@ -146,7 +146,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     # this is done by looking at month 2 settlment dates, and finding the month 1 Expiry
 
     start_roll_col : str = "Start Roll"
-    end_roll_col : str = "Start Roll"
+    end_roll_col : str = "End Roll"
 
     sd = "Expiry"
     rptd = "Roll Period Trade Days"
@@ -186,23 +186,36 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
         start_roll_date : pd.Timestamp = front_month_settlement + pd.DateOffset(days_until_tuesday_front_month)
 
-        selected = vix_calendar[sd][1] == front_month_settlement
+        #a mask so we can select the front month settlement
+        selected_front_month_settlement = vix_calendar[sd][1] == front_month_settlement
 
-        df_foo.loc[selected, start_roll_col] = start_roll_date
+        df_foo.loc[selected_front_month_settlement, start_roll_col] = start_roll_date
 
         #it is going to be negative, because we are looking for the days until the preceeding tuesday
 
-        days_until_tuesday_second_month = 1-front_month_settlement.day_of_week
-      
+        days_until_tuesday_second_month = 1-second_month_settlement.day_of_week  
         end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
+        day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
 
-        df_foo[end_roll_col] = end_roll
+        #I would have preferred to save a boolean array of matches, like we did wtih selected_front_month_settlement, but  
+        #not sure how.
+                
+        this_row_period_slice=slice(start_roll_date,day_before_end_roll)
+
+        df_foo.loc[this_row_period_slice,end_roll_col] = end_roll
 
         #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
         #includes first day of the roll period, but excludes the last.
 
-        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, end_roll + pd.DateOffset(-1)) 
-        df_foo.loc[selected, rptd] = roll_period_trade_days
+        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, day_before_end_roll) 
+
+        #use the same methoology for roll period calendar days for choosing the start and enddates.
+        roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - front_month_settlement)/np.timedelta64(1,'D') )
+
+
+
+        df_foo.loc[this_row_period_slice, rptd] = roll_period_trade_days
+        df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
 
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
