@@ -173,9 +173,10 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     #useful for debuggin.    
     df_foo['Day of Week']=df_foo.index.day_of_week
     df_foo['Day Name']=df_foo.index.day_name()
-
+    df_foo["First Component"]=1
+    df_foo["Second Component"]=2
     def roll_periods() -> Generator:
-        """Generator, returns roll periods as tuples start_roll_date, end_roll_date-1 day, end_roll_date"""
+        """Generator, returns roll periods as tuples start_roll_date, front_month_settlement, end_roll_date-1 day, end_roll_date"""
 
         for second_month_settlement in month_to_prior_month_settlement_map.index:
             front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
@@ -201,10 +202,10 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
             end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
             day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
 
-            yield (start_roll_date,day_before_end_roll,end_roll)
+            yield (start_roll_date,front_month_settlement,day_before_end_roll,end_roll)
 
     def ammend_df():
-        for (start_roll_date,day_before_end_roll,end_roll) in roll_periods():
+        for (start_roll_date,front_month_settlement,day_before_end_roll,end_roll) in roll_periods():
                     
             this_row_period_slice=slice(start_roll_date,day_before_end_roll)
             ic(this_row_period_slice)
@@ -228,9 +229,15 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
             #the above is slightly weird, because the expiring future still trades on the wednesday, though it no weight.
               
-            
+            #for the  front month settlement day, and the start of the roll period day, we use the second and third month to compute weightings
+
+            df_foo.loc[start_roll_date:front_month_settlement,'First Component']=2
+            df_foo.loc[start_roll_date:front_month_settlement,'Second Component']=3
 
             roll_period_trade_days = cfe_exchange_open_days(start_roll_date, day_before_end_roll) 
+            
+
+
             ic(roll_period_trade_days)
             #use the same methoology for roll period calendar days for choosing the start and enddates.
             roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - start_roll_date)/np.timedelta64(1,'D') )
@@ -261,7 +268,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     df_foo['Settle_1_Minus_1']=df_foo["Settle 1"] + pd.DateOffset(-1)
 
     def remaining_roll_period_trade_days_on_row(row):
-        return cfe_exchange_open_days(row["Trade_Day_Plus_1"],row['Settle_1_Minus_1'])
+        return cfe_exchange_open_days(row["Trade_Day_Plus_1"],row['End_Roll_Minus_1'])
 
     remaining_roll_period_trade_days : pd.DataFrame    
     df_foo[rrptd]=remaining_roll_period_trade_days=df_foo.apply(remaining_roll_period_trade_days_on_row,axis=1, result_type='expand')
