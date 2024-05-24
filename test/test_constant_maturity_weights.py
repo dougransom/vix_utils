@@ -19,12 +19,13 @@ def vix_dates():
 
 def test_small_date_range():
    with pd.option_context('display.max_rows',None,'display.max_columns',None):
-    test_dates=vu.vix_futures_dates.cfe_exchange_open_dates(slice('2024-04-15','2024-04-17'))
-    dates_for_weights   = _vix_futures_trade_dates_and_expiry_dates_for_dates(test_dates)
+    vix_calendar=vu.vix_futures_dates.cfe_exchange_open_dates()
+    test_dates=('2024-03-15','2024-04-30')
+    dates_for_weights   = _vix_futures_trade_dates_and_expiry_dates_for_dates(vix_calendar)
 
     print(f"dates testing in april:\n{test_dates}\ndates_for_weights:\n{dates_for_weights}\n")
 
-    weights=vix_constant_maturity_weights(dates_for_weights)
+    weights=vix_constant_maturity_weights(dates_for_weights,*test_dates)
     print(f"Weights:\n{weights}")
 
 

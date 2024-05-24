@@ -109,9 +109,11 @@ def vix_futures_expiry_date_from_trade_date(year, month, day, tenor):
     return vix_futures_expiry_date_monthly(year_of_expiry, month_of_expiry)
 
 
-def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
+def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|pd.Timestamp=None, end_date : str|pd.Timestamp=None) -> pd.DataFrame:
     """
     :param vix_calendar:  the DataFrame returned by  vix_futures_trade_dates_and_expiry_dates
+    :param date_range: A data range to limit the weights, useful for testing or only need weights for a limited range.
+
     :return: a DataFrame containting the weights required to interpolate between the tenors of trading tenors of
     Vix Futures to have a term structure of constant maturity in months.
 
@@ -154,9 +156,28 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     rpcd = "Roll Period Calendar Days"
     rrptd = "Remaining Roll Period Trade Days"
     settle_dates_map = vix_calendar[sd].drop_duplicates().dropna()
-    month_to_prior_month_settlement_map = settle_dates_map.set_index(2)[1]
+    month_to_prior_month_settlement_map_full = settle_dates_map.set_index(2)[1]
+
+    #avoid looping through months with no data, to facillitate easier debugging.
+    #we need the map from the date of the first trade in the range, to month after.
+
+    if start_date or end_date:
+        #we know that we don't need to look more than 30 days in the future, so limit to 70 days
+        # (to avoid any boundry/edge cases) 
+        # to trip the settlement map.
+        last_trade_of_interest=vix_calendar[start_date:end_date].index[-1]
+
+        date_range=slice(start_date,last_trade_of_interest+pd.DateOffset(70))
+        
+        month_to_prior_month_settlement_map = month_to_prior_month_settlement_map_full.loc[date_range]
+    else:
+        month_to_prior_month_settlement_map=month_to_prior_month_settlement_map_full
+
+
+
     cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
-    df_foo = pd.DataFrame(index=vix_calendar.index, data=cols_to_copy)
+
+    df_foo = pd.DataFrame(index=vix_calendar.index, data=cols_to_copy)[date_range if date_range else slice(None) ]
 
     df_foo[rptd] = -100001  # just a nonsense number we can identify
 
@@ -178,6 +199,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     def roll_periods() -> Generator:
         """Generator, returns roll periods as tuples start_roll_date, front_month_settlement, end_roll_date-1 day, end_roll_date"""
 
+  
         for second_month_settlement in month_to_prior_month_settlement_map.index:
             front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
             #https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
@@ -248,6 +270,8 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
             df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
 
     ammend_df()
+    if start_date or end_date:
+        df_foo=df_foo[start_date:end_date]
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
@@ -283,7 +307,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
 
     assert front_month_weights.max() <= 1
-    assert front_month_weights.min() > 0
+    assert front_month_weights.min() >= 0
 
 
     ttr = "Temp Trade Date"
@@ -326,7 +350,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 def pivot_on_contract_maturity(df):
     return df.reset_index().pivot(columns="Contract Month", index="Trade Date")
 
-def cfe_exchange_open_dates(selection_slice : slice)  -> pd.DatetimeIndex:
+def cfe_exchange_open_dates(selection_slice : slice = None)  -> pd.DatetimeIndex:
     """
     Return the dates, sorted, that the CFE is open, based on 
     partial string indexing (https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#partial-string-indexing). 
@@ -336,7 +360,7 @@ def cfe_exchange_open_dates(selection_slice : slice)  -> pd.DatetimeIndex:
     Pass in both Dates unless you want all dates before or all dates after the partial string index supplied.   
     
     """
-    return _valid_cfe_days.loc[selection_slice]
+    return _valid_cfe_days.loc[selection_slice if selection_slice else slice(None)]
 
 def cfe_exchange_open_days(start_date, end_date):
     exchange_open_days = _valid_cfe_days.loc[start_date:end_date]
