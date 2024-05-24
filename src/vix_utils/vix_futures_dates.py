@@ -160,7 +160,9 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
     #avoid looping through months with no data, to facillitate easier debugging.
     #we need the map from the date of the first trade in the range, to month after.
+    cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
 
+    df_foo = pd.DataFrame(index=vix_calendar.index,data=cols_to_copy)
     if start_date or end_date:
         #we know that we don't need to look more than 30 days in the future, so limit to 70 days
         # (to avoid any boundry/edge cases) 
@@ -170,14 +172,14 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
         date_range=slice(start_date,last_trade_of_interest+pd.DateOffset(70))
         
         month_to_prior_month_settlement_map = month_to_prior_month_settlement_map_full.loc[date_range]
+        df_foo=df_foo[start_date:end_date] 
     else:
         month_to_prior_month_settlement_map=month_to_prior_month_settlement_map_full
 
 
 
-    cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
 
-    df_foo = pd.DataFrame(index=vix_calendar.index, data=cols_to_copy)[date_range if date_range else slice(None) ]
+    
 
     df_foo[rptd] = -100001  # just a nonsense number we can identify
 
@@ -270,8 +272,6 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
             df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
 
     ammend_df()
-    if start_date or end_date:
-        df_foo=df_foo[start_date:end_date]
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
@@ -305,6 +305,18 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     df_foo[fmw] = front_month_weights = remaining_roll_period_trade_days / df_foo[rptd]
     df_foo[smw] = next_month_weights  = -1 * front_month_weights + 1
 
+    #identify problematic weights. 
+    #should never happen if the code is correct.
+    front_month_weights_too_big_sel = front_month_weights >1
+    front_month_weights_too_small_sel = front_month_weights<0
+
+    if front_month_weights_too_big_sel.any():
+        front_month_weights_too_big=front_month_weights[front_month_weights_too_big_sel]
+        ic(front_month_weights_too_big)
+
+    if front_month_weights_too_small_sel.any():
+        front_month_weights_too_small=front_month_weights[front_month_weights_too_small_sel]
+        ic(front_month_weights_too_small)
 
     assert front_month_weights.max() <= 1
     assert front_month_weights.min() >= 0
@@ -324,7 +336,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
             row_roll_period_trade_days = row[rptd]  # trade_days_to_settle[trade_date]
             trade_date_loc = trade_days_to_settle.index.get_loc(trade_date)
             trade_date_loc_end_of_roll = trade_date_loc + row_roll_period_trade_days
-            trade_date_loc_end_of_roll_capped = pd.nan if trade_date_loc_end_of_roll > ll else \
+            trade_date_loc_end_of_roll_capped = np.nan if trade_date_loc_end_of_roll > ll else \
                 trade_date_loc_end_of_roll
             trade_date_end_of_roll = df_foo.iloc[trade_date_loc_end_of_roll_capped].at[ttr]
             return trade_date_end_of_roll
