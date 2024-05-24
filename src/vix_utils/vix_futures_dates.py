@@ -8,6 +8,7 @@ import vix_utils.futures_utils as u
 from icecream import ic
 import logging as logging
 from .location import data_dir
+from typing import Generator
 _cfe_calendar = mcal.get_calendar('CFE')
 _now = dt.datetime.now()
 
@@ -173,9 +174,9 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     df_foo['Day of Week']=df_foo.index.day_of_week
     df_foo['Day Name']=df_foo.index.day_name()
 
-    #put the loop in a function, so that the tempory variables in the loop don't migrate and 
-    #accidentally accessed after the loop executes.
-    def loop_over_roll_periods():
+    def roll_periods() -> Generator:
+        """Generator, returns roll periods as tuples start_roll_date, end_roll_date-1 day, end_roll_date"""
+
         for second_month_settlement in month_to_prior_month_settlement_map.index:
             front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
             #https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
@@ -193,19 +194,17 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
             start_roll_date : pd.Timestamp = front_month_settlement + pd.DateOffset(days_until_tuesday_front_month)
 
-            #TODO DELETE a mask so we can select the front month settlement
-        
-            #TODO DELETE selected_front_month_settlement = vix_calendar[sd][1] == front_month_settlement
-
-    
+   
             #it is going to be negative, because we are looking for the days until the preceeding tuesday
 
             days_until_tuesday_second_month = 1-second_month_settlement.day_of_week  
             end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
             day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
 
-            #I would have preferred to save a boolean array of matches, but  
-            #not sure how, so save the slice.
+            yield (start_roll_date,day_before_end_roll,end_roll)
+
+    def ammend_df():
+        for (start_roll_date,day_before_end_roll,end_roll) in roll_periods():
                     
             this_row_period_slice=slice(start_roll_date,day_before_end_roll)
             ic(this_row_period_slice)
@@ -216,7 +215,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
             #includes first day of the roll period, but excludes the last.
 
             roll_period_trade_days = cfe_exchange_open_days(start_roll_date, day_before_end_roll) 
-
+            ic(roll_period_trade_days)
             #use the same methoology for roll period calendar days for choosing the start and enddates.
             roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - start_roll_date)/np.timedelta64(1,'D') )
 
@@ -225,7 +224,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
             df_foo.loc[this_row_period_slice, rptd] = roll_period_trade_days
             df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
 
-    loop_over_roll_periods()
+    ammend_df()
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
