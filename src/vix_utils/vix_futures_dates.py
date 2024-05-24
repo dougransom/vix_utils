@@ -214,6 +214,22 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
             #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
             #includes first day of the roll period, but excludes the last.
 
+            # After the close on the Tuesday, corresponding to the start of the Roll Period, all of the weight is allocated 
+            # to the shorter-term (i.e., mth month) contract. Then on each subsequent business day a fraction of the mth
+            # month VIX futures holding is sold and an equal notional amount of the longer-term (n
+            # th month) VIX futures
+            # is bought. The fraction, or quantity, is proportional to the number of mth month VIX futures contracts as of 
+            # the previous index roll day, and inversely proportional to the length of the current Roll Period. In this way 
+            # the initial position in the mth month contract is progressively moved to the n
+            # th month one over the course 
+            # of the month, until the following Roll Period starts when the old n
+            # th month VIX futures contract becomes 
+            # the new mth month VIX futures contract and gets sold every day afterward as the process begins again.
+
+            #the above is slightly weird, because the expiring future still trades on the wednesday, though it no weight.
+              
+            
+
             roll_period_trade_days = cfe_exchange_open_days(start_roll_date, day_before_end_roll) 
             ic(roll_period_trade_days)
             #use the same methoology for roll period calendar days for choosing the start and enddates.
