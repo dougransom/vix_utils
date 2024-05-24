@@ -5,7 +5,7 @@ import calendar as cal
 import datetime as dt
 import numpy as np
 import vix_utils.futures_utils as u
-
+from icecream import ic
 import logging as logging
 from .location import data_dir
 _cfe_calendar = mcal.get_calendar('CFE')
@@ -168,55 +168,64 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
     # add the start of roll date for front month
 
     df_foo[start_roll_col] = np.nan
-    for second_month_settlement in month_to_prior_month_settlement_map.index:
-        front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
-        #https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
-        #the Roll Period starts after the
-        #close on the Tuesday prior to the monthly Chicago Board Options Exchange (Cboe) VIX Futures 
-        #Settlement Date
-        #a little ambigous if a tuesday is a holiday.
-        day_before_front_month_settlement = front_month_settlement + pd.DateOffset(-1)
+
+    #useful for debuggin.    
+    df_foo['Day of Week']=df_foo.index.day_of_week
+    df_foo['Day Name']=df_foo.index.day_name()
+
+    #put the loop in a function, so that the tempory variables in the loop don't migrate and 
+    #accidentally accessed after the loop executes.
+    def loop_over_roll_periods():
+        for second_month_settlement in month_to_prior_month_settlement_map.index:
+            front_month_settlement=month_to_prior_month_settlement_map[second_month_settlement]
+            #https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
+            #the Roll Period starts after the
+            #close on the Tuesday prior to the monthly Chicago Board Options Exchange (Cboe) VIX Futures 
+            #Settlement Date
+            #a little ambigous if a tuesday is a holiday.
+            day_before_front_month_settlement = front_month_settlement + pd.DateOffset(-1)
+            
+            #days of weeks start at 0 for Monday
+
+            #it is going to be negative, because we are looking for the days until the preceeding tuesday
+            days_until_tuesday_front_month = 1-front_month_settlement.day_of_week
+            
+
+            start_roll_date : pd.Timestamp = front_month_settlement + pd.DateOffset(days_until_tuesday_front_month)
+
+            #TODO DELETE a mask so we can select the front month settlement
         
-        front_month_settlement.day_of_week
-        #days of weeks start at 0 for Monday
+            #TODO DELETE selected_front_month_settlement = vix_calendar[sd][1] == front_month_settlement
 
-        #it is going to be negative, because we are looking for the days until the preceeding tuesday
-        days_until_tuesday_front_month = 1-front_month_settlement.day_of_week
-        
+    
+            #it is going to be negative, because we are looking for the days until the preceeding tuesday
 
-        start_roll_date : pd.Timestamp = front_month_settlement + pd.DateOffset(days_until_tuesday_front_month)
+            days_until_tuesday_second_month = 1-second_month_settlement.day_of_week  
+            end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
+            day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
 
-        #a mask so we can select the front month settlement
-        selected_front_month_settlement = vix_calendar[sd][1] == front_month_settlement
+            #I would have preferred to save a boolean array of matches, but  
+            #not sure how, so save the slice.
+                    
+            this_row_period_slice=slice(start_roll_date,day_before_end_roll)
+            ic(this_row_period_slice)
+            df_foo.loc[this_row_period_slice,start_roll_col] = start_roll_date
+            df_foo.loc[this_row_period_slice,end_roll_col] = end_roll
 
-        df_foo.loc[selected_front_month_settlement, start_roll_col] = start_roll_date
+            #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
+            #includes first day of the roll period, but excludes the last.
 
-        #it is going to be negative, because we are looking for the days until the preceeding tuesday
+            roll_period_trade_days = cfe_exchange_open_days(start_roll_date, day_before_end_roll) 
 
-        days_until_tuesday_second_month = 1-second_month_settlement.day_of_week  
-        end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
-        day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
-
-        #I would have preferred to save a boolean array of matches, like we did wtih selected_front_month_settlement, but  
-        #not sure how.
-                
-        this_row_period_slice=slice(start_roll_date,day_before_end_roll)
-
-        df_foo.loc[this_row_period_slice,end_roll_col] = end_roll
-
-        #roll_period_trade_days is dt in https://www.spglobal.com/spdji/en/documents/methodologies/methodology-sp-vix-futures-indices.pdf page 5
-        #includes first day of the roll period, but excludes the last.
-
-        roll_period_trade_days = cfe_exchange_open_days(front_month_settlement, day_before_end_roll) 
-
-        #use the same methoology for roll period calendar days for choosing the start and enddates.
-        roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - front_month_settlement)/np.timedelta64(1,'D') )
+            #use the same methoology for roll period calendar days for choosing the start and enddates.
+            roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - start_roll_date)/np.timedelta64(1,'D') )
 
 
 
-        df_foo.loc[this_row_period_slice, rptd] = roll_period_trade_days
-        df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
+            df_foo.loc[this_row_period_slice, rptd] = roll_period_trade_days
+            df_foo.loc[this_row_period_slice, rpcd] = roll_period_calendar_days
 
+    loop_over_roll_periods()
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
     df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
@@ -233,7 +242,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame) -> pd.DataFrame:
 
 
     df_foo["Trade_Day_Plus_1"]=df_foo.index + pd.DateOffset(1)
-    df_foo["End_Roll_Minus_1"]= end_roll + pd.DateOffset(-1)
+    df_foo["End_Roll_Minus_1"]= df_foo[end_roll_col] + pd.DateOffset(-1)
     df_foo['Settle_1_Minus_1']=df_foo["Settle 1"] + pd.DateOffset(-1)
 
     def remaining_roll_period_trade_days_on_row(row):
