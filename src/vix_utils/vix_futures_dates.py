@@ -158,6 +158,11 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     settle_dates_map = vix_calendar[sd].drop_duplicates().dropna()
     month_to_prior_month_settlement_map_full = settle_dates_map.set_index(2)[1]
 
+    #need to patch the March  2024 settlement  date in.
+    month_to_prior_month_settlement_map_full['2004-04-21']='2004-03-16'
+    month_to_prior_month_settlement_map_full.sort_index(inplace=True)
+
+
     #avoid looping through months with no data, to facillitate easier debugging.
     #we need the map from the date of the first trade in the range, to month after.
     cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
@@ -305,10 +310,14 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     df_foo[fmw] = front_month_weights = remaining_roll_period_trade_days / df_foo[rptd]
     df_foo[smw] = next_month_weights  = -1 * front_month_weights + 1
 
+
+
+
     #identify problematic weights. 
     #should never happen if the code is correct.
     front_month_weights_too_big_sel = front_month_weights >1
     front_month_weights_too_small_sel = front_month_weights<0
+ 
 
     if front_month_weights_too_big_sel.any():
         front_month_weights_too_big=front_month_weights[front_month_weights_too_big_sel]
@@ -320,6 +329,18 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
     assert front_month_weights.max() <= 1
     assert front_month_weights.min() >= 0
+    assert ((front_month_weights+next_month_weights)==1).all()          #they better add up to one
+
+    tenor_1_weight = (df_foo["First Component"]==1)*front_month_weights  
+    tenor_2_weight = (df_foo["First Component"]==2) * front_month_weights +\
+                     (df_foo["Second Component"] == 2) * next_month_weights
+    tenor_3_weight = (df_foo["Second Component"] == 3) * next_month_weights
+
+    assert ((tenor_1_weight+tenor_2_weight+tenor_3_weight)==1).all()   #better add up to one!
+
+    df_foo["T1W"]=tenor_1_weight
+    df_foo["T2W"]=tenor_1_weight
+    df_foo["T3W"]=tenor_3_weight
 
 
     ttr = "Temp Trade Date"
