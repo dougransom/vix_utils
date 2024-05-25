@@ -46,11 +46,11 @@ def do_weighting_months(trades_df : pd.DataFrame,weight_df:pd.DataFrame,weights_
     """
     return sum(do_weight(trades_df,weight_df,n,t) for n,t in weights_and_tenors )
 
-_weights_and_tenors_vix_front_months=[('Front Month Weight',1), ('Next Month Weight',2)]
+_weights_and_tenors_vix_front_months=[('T1W',1), ('T2W',2),('T3W',3)]
 
-def do_weighting_front_two_months(trades_df : pd.DataFrame,weight_df : pd.DataFrame) -> pd.DataFrame:
+def do_weighting_front_three_months(trades_df : pd.DataFrame,weight_df : pd.DataFrame) -> pd.DataFrame:
     """
-    produces a weighted mean of the two nearest monthly futures resulting in an average of maturity one month.
+    produces a weighted mean of the nearest monthly futures resulting in an average of maturity one month.
     parameters:
     ----------
     trades_df:  a DataFrame indexed by trade date on axis 0, and by Tenor_Monthly (as the first level index) on axis 1.
@@ -117,22 +117,24 @@ def continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataF
  
     weights_all=vix_constant_maturity_weights(df)
 
-    #we only need the weigths we for dates we have trades
+    #we only need the weigths  for dates we have trades
     weights=weights_all[weights_all.index.isin(futures_history.index)]
    
-    #select the front two months and the columns that have trade values
+    #select the front three months and the columns that have trade values
+    #we need three because at times teh front month is ignored and the back two contracts are used.
+
     with pd.option_context('display.max_columns',None): 
         logging.debug(f"\n{'*'*50}\nColumns to weight:\n{futures_history}")
-    front_two_months=futures_history[[1,2]]
-    futures_history_trade_value_columns=front_two_months.swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1)
+    front_three_months=futures_history[[1,2,3]]
+    futures_history_trade_value_columns=front_three_months.swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1)
  
-    weighted_values=do_weighting_front_two_months(futures_history_trade_value_columns,weights)
+    weighted_values=do_weighting_front_three_months(futures_history_trade_value_columns,weights)
 
     #should have the same number of rows
     assert weighted_values.shape[0]==futures_history_trade_value_columns.shape[0]
 
     
-    df_file=front_two_months.swaplevel(axis=1)["File"]
+    df_file=front_three_months.swaplevel(axis=1)["File"]
     weighted_values["File"]=df_file[1]+"+"+df_file[2] 
     
     weighted_values['Expiry']=weights['Expiry']

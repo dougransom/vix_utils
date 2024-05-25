@@ -339,7 +339,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     assert ((tenor_1_weight+tenor_2_weight+tenor_3_weight)==1).all()   #better add up to one!
 
     df_foo["T1W"]=tenor_1_weight
-    df_foo["T2W"]=tenor_1_weight
+    df_foo["T2W"]=tenor_2_weight
     df_foo["T3W"]=tenor_3_weight
 
 
