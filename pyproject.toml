@@ -24,7 +24,8 @@ dependencies= [
     "aiohttp[speedups]",
     "openpyxl",
     "appdirs",
-    "more_itertools"]
+    "more_itertools",
+    "icecream"]
 
 
 [project.optional-dependencies]
