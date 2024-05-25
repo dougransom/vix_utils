@@ -31,6 +31,7 @@ _valid_cfe_days : pd.DatetimeIndex = pd.DatetimeIndex(
 # days = _valid_cfe_days.date
 # days1 = pd.DatetimeIndex(days).to_series()
 
+minus_one_day=pd.DateOffset(-1)
 
 @func.lru_cache(maxsize=None)  # called repeatedly with the same values, so cache the results.
 def vix_futures_expiry_date_monthly(year: int, month: int):
@@ -155,6 +156,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     rptd = "Roll Period Trade Days"
     rpcd = "Roll Period Calendar Days"
     rrptd = "Remaining Roll Period Trade Days"
+    rrpcd = "Remaining Roll Period Calendar Days"
     settle_dates_map = vix_calendar[sd].drop_duplicates().dropna()
     month_to_prior_month_settlement_map_full = settle_dates_map.set_index(2)[1]
 
@@ -214,7 +216,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
             #close on the Tuesday prior to the monthly Chicago Board Options Exchange (Cboe) VIX Futures 
             #Settlement Date
             #a little ambigous if a tuesday is a holiday.
-            day_before_front_month_settlement = front_month_settlement + pd.DateOffset(-1)
+            day_before_front_month_settlement = front_month_settlement + minus_one_day
             
             #days of weeks start at 0 for Monday
 
@@ -229,7 +231,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
             days_until_tuesday_second_month = 1-second_month_settlement.day_of_week  
             end_roll : pd.Timestamp =  second_month_settlement + pd.DateOffset(days_until_tuesday_second_month)
-            day_before_end_roll : pd.Timestamp = end_roll+pd.DateOffset(-1)
+            day_before_end_roll : pd.Timestamp = end_roll+minus_one_day
 
             yield (start_roll_date,front_month_settlement,day_before_end_roll,end_roll)
 
@@ -269,7 +271,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
             ic(roll_period_trade_days)
             #use the same methoology for roll period calendar days for choosing the start and enddates.
-            roll_period_calendar_days = int( (end_roll + pd.DateOffset(-1) - start_roll_date)/np.timedelta64(1,'D') )
+            roll_period_calendar_days = int( (day_before_end_roll - start_roll_date)/np.timedelta64(1,'D') )
 
 
 
@@ -293,8 +295,8 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
 
     df_foo["Trade_Day_Plus_1"]=df_foo.index + pd.DateOffset(1)
-    df_foo["End_Roll_Minus_1"]= df_foo[end_roll_col] + pd.DateOffset(-1)
-    df_foo['Settle_1_Minus_1']=df_foo["Settle 1"] + pd.DateOffset(-1)
+    df_foo["End_Roll_Minus_1"]= df_foo[end_roll_col] + minus_one_day
+    df_foo['Settle_1_Minus_1']=df_foo["Settle 1"] + minus_one_day
 
     def remaining_roll_period_trade_days_on_row(row):
         return cfe_exchange_open_days(row["Trade_Day_Plus_1"],row['End_Roll_Minus_1'])
@@ -302,6 +304,12 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
     remaining_roll_period_trade_days : pd.DataFrame    
     df_foo[rrptd]=remaining_roll_period_trade_days=df_foo.apply(remaining_roll_period_trade_days_on_row,axis=1, result_type='expand')
 
+    def remaining_roll_period_calendar_days_on_row(row):
+        return int((row['End_Roll_Minus_1']-row.name)/np.timedelta64(1,'D'))
+
+
+    remaining_roll_period_trade_days : pd.DataFrame
+    df_foo[rrpcd] = remaining_roll_period_calendar_days=df_foo.apply(remaining_roll_period_calendar_days_on_row,axis=1,result_type='expand')
 
     front_month_weights : pd.Series
     next_month_weights : pd.Series
