@@ -46,7 +46,7 @@ def do_weighting_months(trades_df : pd.DataFrame,weight_df:pd.DataFrame,weights_
     """
     return sum(do_weight(trades_df,weight_df,n,t) for n,t in weights_and_tenors )
 
-_weights_and_tenors_vix_front_months=[('T1W',1), ('T2W',2),('T3W',3)]
+_weights_and_tenors_vix_front_months=[(f"T{i}W",i) for i in range(1,4)]
 
 def do_weighting_front_three_months(trades_df : pd.DataFrame,weight_df : pd.DataFrame) -> pd.DataFrame:
     """

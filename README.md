@@ -79,6 +79,4 @@ At some point they need to be patched in if they exist.
 ```
 There seem to be  a few dates where spot indexes are missing, you will have to workaround by using fill feature of Pandas datafame, or skip those days, in any analysis.
 ~~~
-## Developing
-https://numpydoc.readthedocs.io/en/latest/format.html
 
