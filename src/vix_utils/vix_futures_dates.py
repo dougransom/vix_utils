@@ -270,7 +270,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
 
             ic(roll_period_trade_days)
-            #use the same methoology for roll period calendar days for choosing the start and enddates.
+            #use the same methoology for roll period calendar days for choosing the start and end dates.
             roll_period_calendar_days = int( (day_before_end_roll - start_roll_date)/np.timedelta64(1,'D') )
 
 
@@ -280,7 +280,6 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
     ammend_df()
     df_foo[start_roll_col] = pd.to_datetime(df_foo[start_roll_col])
-    df_foo[rpcd] = vix_calendar[sd][1] - df_foo[start_roll_col]
     tenor_tds = "Tenor_Trade_Days"
     ten_caldays = "Tenor_Days"
 
