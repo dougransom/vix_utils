@@ -147,7 +147,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
     # create a map from Expirys to the previous Expirys
     # this is done by looking at month 2 settlment dates, and finding the month 1 Expiry
-
+    ic.disable()
     start_roll_col : str = "Start Roll"
     end_roll_col : str = "End Roll"
 
@@ -165,7 +165,7 @@ def vix_constant_maturity_weights(vix_calendar : pd.DataFrame, start_date : str|
 
     #avoid looping through months with no data, to facillitate easier debugging.
     #we need the map from the date of the first trade in the range, to month after.
-    cols_to_copy = {"Settle 1": vix_calendar['Expiry'][1], "Settle 2": vix_calendar['Expiry'][2]}
+    cols_to_copy = {f"Settle {i}": vix_calendar['Expiry'][i] for i in range(1,4)}
 
     df_foo = pd.DataFrame(index=vix_calendar.index,data=cols_to_copy)
     if start_date or end_date:
