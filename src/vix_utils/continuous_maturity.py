@@ -84,7 +84,7 @@ def append_continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->p
     d[1.5]=new_cm
     e=pd.concat(d,axis=1)
 
-    #concatenate new_cm (after adding the level of idexing)
+    #concatenate new_cm (after adding the level of indexing)
     new_df3=pd.concat([new_df2,e],axis=1).sort_index(axis=1)
     return new_df3
 
@@ -125,8 +125,14 @@ def continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataF
 
     with pd.option_context('display.max_columns',None): 
         logging.debug(f"\n{'*'*50}\nColumns to weight:\n{futures_history}")
-    front_three_months=futures_history[[1,2,3]]
-    futures_history_trade_value_columns=front_three_months.swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1)
+
+    component_months_1_5=np.array([1,2,3])
+
+    constant_expiry_to_components_map={ix+1.5:component_months_1_5+ix for ix in range(0,6)}    
+
+    constant_expiry_index=1.5
+    months_to_weight=futures_history[constant_expiry_to_components_map[constant_expiry_index]]
+    futures_history_trade_value_columns=months_to_weight.swaplevel(axis=1)[_weighted_column_names].swaplevel(axis=1)
  
     weighted_values=do_weighting_front_three_months(futures_history_trade_value_columns,weights)
 
@@ -134,7 +140,7 @@ def continuous_maturity_one_month(monthly_wide_records : pd.DataFrame)->pd.DataF
     assert weighted_values.shape[0]==futures_history_trade_value_columns.shape[0]
 
     
-    df_file=front_three_months.swaplevel(axis=1)["File"]
+    df_file=months_to_weight.swaplevel(axis=1)["File"]
     weighted_values["File"]=df_file[1]+"+"+df_file[2] 
     
     weighted_values['Expiry']=weights['Expiry']
