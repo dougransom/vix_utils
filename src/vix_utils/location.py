@@ -1,6 +1,15 @@
 from appdirs import user_data_dir,user_log_dir,AppDirs
 from pathlib import Path
-from . import __version__
+
+
+
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("vix_utils")
+except PackageNotFoundError:
+    # Package is not installed (e.g., running from source without 'pip install -e .')
+    __version__ = "unknown"
 
 __override_data_dir__=None
 
